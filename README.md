@@ -1,2 +1,3 @@
 # AL-Scripts
-Developed Scripts for deploying various Labs using Automated=Lab
+Developed Scripts for deploying various Labs using Automated-Lab
+
