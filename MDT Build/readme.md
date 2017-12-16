@@ -17,4 +17,4 @@ Known Limitations:
 - Deployed Server must be standalone. Script has not been tested deploying MDT on Domain Controllers or member servers
 - Script assumes that MDT+ADK, WDS and DHCP all reside on the same server. Splitting DHCP server role in particular has not been tested.
 
-This script is a work in progress, there are some assumptions made resulting in some lack of error checking. Additional enhancements are in the pipeline, designated by "Feature Enhancement" in the comment header of each function (these will be moved to an overall feature enhacements request process as traditional with Gitub)
+This script is a work in progress, there are some assumptions made resulting in some lack of error checking. Additional enhancements are in the pipeline, and are managed as enhancement requests within GitHub
