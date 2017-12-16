@@ -6,4 +6,3 @@ Prerequisites:
 
 This script is a work in progress obviously
 
-Test with vs-code
