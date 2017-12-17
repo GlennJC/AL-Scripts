@@ -492,6 +492,9 @@ Start-Transcript -Path 'C:\Temp\MDTLab.log'
 New-LabDefinition -Name 'MDTLab' -DefaultVirtualizationEngine HyperV -VmPath "C:\Hyper-V\Automation-Lab"
 Add-LabVirtualNetworkDefinition -Name 'MDTLab' -AddressSpace 192.168.50.0/24
 
+$ScriptDir = Split-Path $script:MyInvocation.MyCommand.Path
+
+
 #Example with a secondary disk to hold the MDT Install Files
 $DeploymentFolderLocation = 'D:\DeploymentShare'
 Add-LabDiskDefinition -Name MDTData -DiskSizeInGb 60
@@ -510,7 +513,7 @@ Install-MDT -ComputerName 'MDTServer' -DeploymentFolder $DeploymentFolderLocatio
 #At this stage, MDT and WDS are installed and configured, however there are NO Operating Systems or applications available, plus DHCP still needs to be installed and configured
 
 #Import applications into MDT (optional step). The example below uses an XML file containg the app information
-Import-MDTApplications -XMLFilePath 'C:\LabSources\MyScripts\MDTApplications.XML' -ComputerName 'MDTServer' -DeploymentFolder $DeploymentFolderLocation
+Import-MDTApplications -XMLFilePath $(Join-Path -Path $ScriptDir -ChildPath 'MDTApplications.XML') -ComputerName 'MDTServer' -DeploymentFolder $DeploymentFolderLocation
 
 #Standard Import from ISO
 #Import-MDTOS -ComputerName 'MDTServer' -ISOPath 'C:\LabSources\ISOs\SW_DVD5_WIN_ENT_10_1511_64BIT_English_MLF_X20-82288.ISO' -ISOFriendlyName 'Windows 10 1511' -DeploymentFolder $DeploymentFolderLocation

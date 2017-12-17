@@ -169,7 +169,7 @@
     </Application>
     <Application Name="Mozilla Firefox">
         <DownloadPath>https://ftp.mozilla.org/pub/firefox/releases/57.0/win64/en-US/Firefox%20Setup%2057.0.exe</DownloadPath>
-        <AppPath>Utilities</AppPath>
+        <AppPath>Applications</AppPath>
         <ImportApp>True</ImportApp>
         <Enabled>True</Enabled>
         <ShortName>Mozilla Firefox</ShortName>
@@ -237,6 +237,54 @@
         <Publisher></Publisher>
         <Langauge>English</Langauge>
         <CommandLine>nmap-7.60-setup.exe /S</CommandLine>
+        <WorkingDirectory></WorkingDirectory>
+    </Application>
+    <Application Name="Palemoon x64">
+        <DownloadPath>http://rm-us.palemoon.org/release/palemoon-27.6.2.win64.installer.exe</DownloadPath>
+        <AppPath>Applications</AppPath>
+        <ImportApp>True</ImportApp>
+        <Enabled>True</Enabled>
+        <ShortName>Palemoon x64</ShortName>
+        <AppVersion>27.6.2</AppVersion>
+        <Publisher></Publisher>
+        <Langauge>English</Langauge>
+        <CommandLine>palemoon-27.6.2.win64.installer.exe /S</CommandLine>
+        <WorkingDirectory></WorkingDirectory>
+    </Application> 
+    <Application Name="Waterfox x64">
+        <DownloadPath>https://storage-waterfox.netdna-ssl.com/releases/win64/installer/Waterfox%2056.0.1%20Setup.exe</DownloadPath>
+        <AppPath>Applications</AppPath>
+        <ImportApp>True</ImportApp>
+        <Enabled>True</Enabled>
+        <ShortName>Waterfox x64</ShortName>
+        <AppVersion>56.0.1</AppVersion>
+        <Publisher></Publisher>
+        <Langauge>English</Langauge>
+        <CommandLine>Waterfox%2056.0.1%20Setup.exe /S</CommandLine>
+        <WorkingDirectory></WorkingDirectory>
+    </Application> 
+    <Application Name="TeraCopy">
+        <DownloadPath>https://www.codesector.com/files/teracopy.exe</DownloadPath>
+        <AppPath>Utilities</AppPath>
+        <ImportApp>True</ImportApp>
+        <Enabled>True</Enabled>
+        <ShortName>TeraCopy</ShortName>
+        <AppVersion>3.2.1</AppVersion>
+        <Publisher></Publisher>
+        <Langauge>English</Langauge>
+        <CommandLine>teracopy.exe /S</CommandLine>
+        <WorkingDirectory></WorkingDirectory>
+    </Application>
+    <Application Name="Advanced IP Scanner">
+        <DownloadPath>http://download1.famatech.com/download/files/ipscan25.exe</DownloadPath>
+        <AppPath>Utilities</AppPath>
+        <ImportApp>True</ImportApp>
+        <Enabled>True</Enabled>
+        <ShortName>Advanced IP Scanner</ShortName>
+        <AppVersion>2.5</AppVersion>
+        <Publisher></Publisher>
+        <Langauge>English</Langauge>
+        <CommandLine>ipscan25.exe /S</CommandLine>
         <WorkingDirectory></WorkingDirectory>
     </Application> 
 </Applications>
