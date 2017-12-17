@@ -136,10 +136,10 @@ $MDTDownloadLocation = 'https://download.microsoft.com/download/3/3/9/339BE62D-B
        $MDTDownloadURL = New-Object System.Uri($MDTDownloadLocation)
        $MDTInstallFileName = $MDTDownloadURL.Segments[$MDTDownloadURL.Segments.Count-1]
    
-       Write-ScreenInfo "Copying MDT Install Files to server 'MDTServer'..."
+       Write-ScreenInfo "Copying MDT Install Files to server '$SCCMServerName'..."
        Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $MDTInstallFileName) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName
    
-       Write-ScreenInfo "Copying ADK Install Files to server 'MDTServer'..."
+       Write-ScreenInfo "Copying ADK Install Files to server '$SCCMServerName'..."
        Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'ADK') -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
    
        Write-ScreenInfo "Installing ADK on server '$SCCMServerName'..."
@@ -153,7 +153,7 @@ $MDTDownloadLocation = 'https://download.microsoft.com/download/3/3/9/339BE62D-B
            Add-WindowsFeature WDS -IncludeManagementTools | Out-Null
        }
 
-       Write-ScreenInfo "Installing 'MDT' on server 'MDTServer'..."
+       Write-ScreenInfo "Installing 'MDT' on server '$SCCMServerName'..."
        Install-LabSoftwarePackage -ComputerName $SCCMServerName -LocalPath "C:\Install\$MDTInstallFileName" -CommandLine '/qb'
 
        Invoke-LabCommand -ActivityName 'Configure WDS' -ComputerName $SCCMServerName -ScriptBlock {
