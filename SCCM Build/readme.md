@@ -1,8 +1,27 @@
 This script is designed to deploy Microsoft SCCM using Automated-Lab as the base deployment toolkit
 
 Prerequisites:
-
 - Installed version of Automated-Lab (Tested on v4.5.0)
+- Download of the Microsoft Assessment and Deployment Kit - available here:
+    https://developer.microsoft.com/en-us/windows/hardware/windows-assessment-deployment-kit
+    (Tested with 1709 Version)
+- A Server operating system image for an two machine AL machine deployment (Domain Controller and SCCM Server:
+    Tesed with Windows Server 2016 for both roles
+- SCCM Requires SQL Server installed, assumed that existing AL SQL Role deployment method is used.
+    Tested with SQL Server 2014
+- SCCM Prerequisites downloaded using SETUPDL.EXE, available in SCCM package in .\SMSSETUP\BIN\X64. It is assumed that the guest machine does not have internet access, so this set of packes (approx 600mb) must be downloaded and placed into the $LabSources\SoftwarePackages\SCCMPreReqs folder
 
-This script is a work in progress obviously
+Known Restrictios/Limitations:
+- Currently tested with a single AD Domain and Dedicated SCCM+SQL Server
+- SCCM Server must have a second disk attached to hold the SCCM Binaries, SQL Databases, and SCCM Content Shares (assumeed to be D:)
+- A minimum of 4gb of memory is recommended due to number of running processes + SQL Server
+- SCCM Requires a specific SQL collation setting, which needs to be specific during the Virtual Machine definition phase:
 
+  $roles = (Get-LabMachineRoleDefinition -Role SQLServer2014 -Properties @{ Collation = 'SQL_Latin1_General_CP1_CI_AS' })
+  Add-LabDiskDefinition -Name SCCMData -DiskSizeInGb 100
+  Add-LabMachineDefinition -Name $SCCMServerName -DiskName SCCMData -Memory 4GB -Processors 4 -Roles $roles -IpAddress '192.168.40.20' 
+ 
+ - All SCCM Generated certificates are self-signed, solution does not currently integrate with Certifcate Services
+ - Currently SCCM binaries are assumed to be in the $LabSources\SoftwarePackages folder.  Evaluation version of SCCM Available from Microsoft is a self-extracting EXE, rather than an ISO, so an ISO image deployment has not been tested.
+
+This script is a work in progress, there are some assumptions made resulting in some lack of error checking. Additional enhancements are in the pipeline, and are managed as enhancement requests within GitHub
