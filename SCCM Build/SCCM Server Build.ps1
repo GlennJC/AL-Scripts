@@ -14,163 +14,155 @@
     General notes
 #>
 
-#Cleanup from last run
-Remove-Item -Path 'C:\Temp\SCCMLab.log' -Force -ErrorAction SilentlyContinue
-Start-Transcript -Path 'C:\Temp\SCCMLab.log'
-
-$labName = 'SCCMLab'
-$labSources = Get-LabSourcesLocation
-$SCCMServerName = 'SCCMServer'
-
-$PSDefaultParameterValues = @{
-    'Add-LabMachineDefinition:Network' = $labName
-    'Add-LabMachineDefinition:ToolsPath'= "$labSources\Tools"
-    'Add-LabMachineDefinition:DomainName' = 'sccmlab.local'
-    'Add-LabMachineDefinition:DnsServer1' = '192.168.40.10'
-    'Add-LabMachineDefinition:OperatingSystem' = 'Windows Server 2016 SERVERSTANDARD'
-}
-
-New-LabDefinition -Name $LabName -DefaultVirtualizationEngine HyperV -VmPath "C:\Hyper-V\Automation-Lab"
-Add-LabVirtualNetworkDefinition -Name $LabName -AddressSpace 192.168.40.0/24
-Add-LabIsoImageDefinition -Name SQLServer2014 -Path $labSources\ISOs\en_sql_server_2014_standard_edition_x64_dvd_3932034.iso
-
-Add-LabMachineDefinition -Name DC1 -Memory 2GB -Roles RootDC -IPAddress '192.168.40.10'
-
-#Add the SQL ROle definition. SCCM requires a specific Collation setting, so pass that in
-$roles = (Get-LabMachineRoleDefinition -Role SQLServer2014 -Properties @{ Collation = 'SQL_Latin1_General_CP1_CI_AS' })
-Add-LabDiskDefinition -Name SCCMData -DiskSizeInGb 100
-Add-LabMachineDefinition -Name $SCCMServerName -DiskName SCCMData -Memory 4GB -Processors 4 -Roles $roles -IpAddress '192.168.40.20' 
-
-#Do the installation
-Install-Lab
-
-#Save a snapshot of the machines during development, remove for production deployments
-Checkpoint-LABVM -All -SnapshotName 'After Build'
-
-
-#Copy the SCCM Binaries
-$downloadTargetFolder = Join-Path -Path $labSources -ChildPath SoftwarePackages
-Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'SCCM1702') -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
-#Copy the SCCM Prereqs (must have been previously downloaded)
-Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'SCCMPreReqs') -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
-
-#Extend the AD Schema
-Invoke-LabCommand -ActivityName 'Extend AD Schema' -ComputerName $SCCMServerName -ScriptBlock {
-    Start-Process -FilePath "C:\Install\SCCM1702\SMSSETUP\BIN\X64\extadsch.exe" -Wait
-}
-
-#Need to execute this command on the Domain Controller, since it has the AD Powershell cmdlets available
-$RootDC = Get-LabMachine | Where-Object {$_.Roles -like "RootDC"}
-#Create the Necessary OU and permissions for the SCCM container in AD
-
-Invoke-LabCommand -ActivityName 'Configure SCCM Systems Management Container' -ComputerName $RootDC -ScriptBlock {
+function Install-SCCM {
     param  
-           (
+    (
+        [Parameter(Mandatory)]
+        $SCCMServerName,
+
+        [Parameter(Mandatory)]
+        $SCCMBinariesDirectory,
+
+        [Parameter(Mandatory)]
+        $SCCMPreReqsDirectory,
+
+        [Parameter(Mandatory)]
+        $SCCMSiteCode = 'CM1'
+    )
+
+    $MDTDownloadLocation = 'https://download.microsoft.com/download/3/3/9/339BE62D-B4B8-4956-B58D-73C4685FC492/MicrosoftDeploymentToolkit_x64.msi'
+
+    #Do Some quick checks before we get going
+    $downloadTargetFolder = Join-Path -Path $labSources -ChildPath SoftwarePackages
+    #Check for existance of ADK Installation Files
+    if (!(Test-Path -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'ADK'))) {
+        Write-LogFunctionExitWithError -Message "ADK Installation files not located at '$(Join-Path -Path $downloadTargetFolder -ChildPath 'ADK')'"
+        return
+    }
+
+    if (!(Test-Path -Path (Join-Path -Path $downloadTargetFolder -ChildPath $SCCMBinariesDirectory))) {
+        Write-LogFunctionExitWithError -Message "SCCM Installation files not located at '$(Join-Path -Path $downloadTargetFolder -ChildPath $SCCMBinariesDirectory)'"
+        return
+    }
+
+    if (!(Test-Path -Path (Join-Path -Path $downloadTargetFolder -ChildPath $SCCMPreReqsDirectory))) {
+        Write-LogFunctionExitWithError -Message "SCCM PreRequisite files not located at '$(Join-Path -Path $downloadTargetFolder -ChildPath $SCCMPreReqsDirectory)'"
+        return
+    }
+
+    #Bring all available disks online (this is to cater for the secondary drive)
+    #For some reason, cant make the disk online and RW in the one command, need to perform two seperate actions
+    Invoke-LabCommand -ActivityName 'Bring Disks Online' -ComputerName $SCCMServerName -ScriptBlock {
+        $DataVolume = Get-Disk | Where-Object -Property OperationalStatus -eq Offline
+        $DataVolume | Set-Disk -IsOffline $false
+        $DataVolume | Set-Disk -IsReadOnly $false
+    }
+    
+    #Copy the SCCM Binaries
+    $downloadTargetFolder = Join-Path -Path $labSources -ChildPath SoftwarePackages
+    Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $SCCMBinariesDirectory) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
+    #Copy the SCCM Prereqs (must have been previously downloaded)
+    Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $SCCMPreReqsDirectory) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
+
+    #Extend the AD Schema
+    Invoke-LabCommand -ActivityName 'Extend AD Schema' -ComputerName $SCCMServerName -ScriptBlock {
+        Start-Process -FilePath "C:\Install\SCCM1702\SMSSETUP\BIN\X64\extadsch.exe" -Wait
+    }
+
+    #Need to execute this command on the Domain Controller, since it has the AD Powershell cmdlets available
+    $RootDC = Get-LabMachine | Where-Object {$_.Roles -like "RootDC"}
+    #Create the Necessary OU and permissions for the SCCM container in AD
+
+    Invoke-LabCommand -ActivityName 'Configure SCCM Systems Management Container' -ComputerName $RootDC -ScriptBlock {
+        param  
+            (
                [Parameter(Mandatory)]
                $SCCMServerName
            )
 
-    Import-Module ActiveDirectory
-    # Figure out our domain
-    $DomainRoot = (Get-ADRootDSE).defaultNamingContext
+        Import-Module ActiveDirectory
+        # Figure out our domain
+        $DomainRoot = (Get-ADRootDSE).defaultNamingContext
 
-    # Get or create the System Management container
-    $ou = $null
-    try
-    {
-        $ou = Get-ADObject "CN=System Management,CN=System,$DomainRoot"
-    }
-    catch
-    {
-        Write-Verbose "System Management container does not currently exist."
-    }
+        # Get or create the System Management container
+        $ou = $null
+        try
+        {
+            $ou = Get-ADObject "CN=System Management,CN=System,$DomainRoot"
+        }
+        catch
+        {   
+            Write-Verbose "System Management container does not currently exist."
+        }
 
-    #If the OU Doesnt already exist, create it
-    if ($ou -eq $null)
-    {
-        $ou = New-ADObject -Type Container -name "System Management" -Path "CN=System,$DomainRoot" -Passthru
-    }
+        #If the OU Doesnt already exist, create it
+        if ($ou -eq $null)
+        {
+            $ou = New-ADObject -Type Container -name "System Management" -Path "CN=System,$DomainRoot" -Passthru
+        }
 
-    # Get the current ACL for the OU
-    $acl = Get-ACL "ad:CN=System Management,CN=System,$DomainRoot"
+        # Get the current ACL for the OU
+        $acl = Get-ACL "ad:CN=System Management,CN=System,$DomainRoot"
 
-    # Get the computer's SID (we need to get the computer object, which is in the form <ServerName>$)
-    $SCCMComputer = Get-ADComputer "$SCCMServerName$"
-    $SCCMServerSID = [System.Security.Principal.SecurityIdentifier] $SCCMComputer.SID
+        # Get the computer's SID (we need to get the computer object, which is in the form <ServerName>$)
+        $SCCMComputer = Get-ADComputer "$SCCMServerName$"
+        $SCCMServerSID = [System.Security.Principal.SecurityIdentifier] $SCCMComputer.SID
 
-    $ActiveDirectoryRights = "GenericAll"
-    $AccessControlType = "Allow"
-    $Inherit = "SelfAndChildren"
-    $nullGUID = [guid]'00000000-0000-0000-0000-000000000000'
+        $ActiveDirectoryRights = "GenericAll"
+        $AccessControlType = "Allow"
+        $Inherit = "SelfAndChildren"
+        $nullGUID = [guid]'00000000-0000-0000-0000-000000000000'
  
-    $ACE = New-Object System.DirectoryServices.ActiveDirectoryAccessRule $SCCMServerSID, $ActiveDirectoryRights, $AccessControlType, $Inherit, $nullGUID
-    # Create a new access control entry to allow access to the OU
-    # Add the ACE to the ACL, then set the ACL to save the changes
-    $acl.AddAccessRule($ACE)
-    Set-ACL -aclobject $acl "ad:CN=System Management,CN=System,$DomainRoot"
+        # Create a new access control entry to allow access to the OU
+        $ACE = New-Object System.DirectoryServices.ActiveDirectoryAccessRule $SCCMServerSID, $ActiveDirectoryRights, $AccessControlType, $Inherit, $nullGUID
+        
+        # Add the ACE to the ACL, then set the ACL to save the changes
+        $acl.AddAccessRule($ACE)
+        Set-ACL -aclobject $acl "ad:CN=System Management,CN=System,$DomainRoot"
 
-} -ArgumentList $SCCMServerName
+    } -ArgumentList $SCCMServerName
 
-#MDT+WDS
-$MDTDownloadLocation = 'https://download.microsoft.com/download/3/3/9/339BE62D-B4B8-4956-B58D-73C4685FC492/MicrosoftDeploymentToolkit_x64.msi'
+    Write-ScreenInfo -Message "Downloading MDT Installation Files from '$MDTDownloadLocation'"
+    Get-LabInternetFile -Uri $MDTDownloadLocation -Path $downloadTargetFolder -ErrorAction Stop
    
-       #Bring all available disks online (this is to cater for the secondary drive)
-       #For some reason, cant make the disk online and RW in the one command, need to perform two seperate actions
-       Invoke-LabCommand -ActivityName 'Bring Disks Online' -ComputerName $SCCMServerName -ScriptBlock {
-           $DataVolume = Get-Disk | Where-Object -Property OperationalStatus -eq Offline
-           $DataVolume | Set-Disk -IsOffline $false
-           $DataVolume | Set-Disk -IsReadOnly $false
-       }
+    $MDTDownloadURL = New-Object System.Uri($MDTDownloadLocation)
+    $MDTInstallFileName = $MDTDownloadURL.Segments[$MDTDownloadURL.Segments.Count-1]
    
-       $downloadTargetFolder = Join-Path -Path $labSources -ChildPath SoftwarePackages
+    Write-ScreenInfo "Copying MDT Install Files to server '$SCCMServerName'..."
+    Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $MDTInstallFileName) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName
    
-       #Check for existance of ADK Installation Files
-       if (!(Test-Path -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'ADK'))) {
-           Write-LogFunctionExitWithError -Message "ADK Installation files not located at '$(Join-Path -Path $downloadTargetFolder -ChildPath 'ADK')'"
-           return
-       }
-       
-       Write-ScreenInfo -Message "Downloading MDT Installation Files from '$MDTDownloadLocation'"
-       Get-LabInternetFile -Uri $MDTDownloadLocation -Path $downloadTargetFolder -ErrorAction Stop
+    Write-ScreenInfo "Copying ADK Install Files to server '$SCCMServerName'..."
+    Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'ADK') -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
    
-       $MDTDownloadURL = New-Object System.Uri($MDTDownloadLocation)
-       $MDTInstallFileName = $MDTDownloadURL.Segments[$MDTDownloadURL.Segments.Count-1]
-   
-       Write-ScreenInfo "Copying MDT Install Files to server '$SCCMServerName'..."
-       Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $MDTInstallFileName) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName
-   
-       Write-ScreenInfo "Copying ADK Install Files to server '$SCCMServerName'..."
-       Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'ADK') -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
-   
-       Write-ScreenInfo "Installing ADK on server '$SCCMServerName'..."
-       Invoke-LabCommand -ActivityName 'Install ADK' -ComputerName $SCCMServerName -ScriptBlock {
+    Write-ScreenInfo "Installing ADK on server '$SCCMServerName'..."
+    Invoke-LabCommand -ActivityName 'Install ADK' -ComputerName $SCCMServerName -ScriptBlock {
            Start-Process -FilePath "C:\Install\ADK\adksetup.exe" -ArgumentList "/norestart /q /ceip off /features OptionId.WindowsPreinstallationEnvironment OptionId.DeploymentTools OptionId.UserStateMigrationTool OptionId.ImagingAndConfigurationDesigner" -Wait
-       }
+    }
+
+    Install-LabWindowsFeature -ComputerName $SCCMServerName -FeatureName 'NET-Framework-Core'
    
-       Install-LabWindowsFeature -ComputerName $SCCMServerName -FeatureName 'NET-Framework-Core'
-   
-       Invoke-LabCommand -ActivityName 'Install WDS Tools' -ComputerName $SCCMServerName -ScriptBlock {
+    Invoke-LabCommand -ActivityName 'Install WDS Tools' -ComputerName $SCCMServerName -ScriptBlock {
            Add-WindowsFeature WDS -IncludeManagementTools | Out-Null
-       }
+    }
 
-       Write-ScreenInfo "Installing 'MDT' on server '$SCCMServerName'..."
-       Install-LabSoftwarePackage -ComputerName $SCCMServerName -LocalPath "C:\Install\$MDTInstallFileName" -CommandLine '/qb'
+    Write-ScreenInfo "Installing 'MDT' on server '$SCCMServerName'..."
+    Install-LabSoftwarePackage -ComputerName $SCCMServerName -LocalPath "C:\Install\$MDTInstallFileName" -CommandLine '/qb'
 
-       Invoke-LabCommand -ActivityName 'Configure WDS' -ComputerName $SCCMServerName -ScriptBlock {
+    Invoke-LabCommand -ActivityName 'Configure WDS' -ComputerName $SCCMServerName -ScriptBlock {
         Start-Process -FilePath "C:\Windows\System32\WDSUTIL.EXE" -ArgumentList "/Initialize-Server /RemInst:C:\RemoteInstall" -Wait
         Start-Sleep -Seconds 10
         Start-Process -FilePath "C:\Windows\System32\WDSUTIL.EXE" -ArgumentList "/Set-Server /AnswerClients:All" -Wait
-        }  
+    }  
 
-        #SCCM Needs a ton of additional features installed...
-       Install-LabWindowsFeature -ComputerName $SCCMServerName -FeatureName 'FS-FileServer,Web-Mgmt-Tools,Web-Mgmt-Console,Web-Mgmt-Compat,Web-Metabase,Web-WMI,Web-WebServer,Web-Common-Http,Web-Default-Doc,Web-Dir-Browsing,Web-Http-Errors,Web-Static-Content,Web-Http-Redirect,Web-Health,Web-Http-Logging,Web-Log-Libraries,Web-Request-Monitor,Web-Http-Tracing,Web-Performance,Web-Stat-Compression,Web-Dyn-Compression,Web-Security,Web-Filtering,Web-Windows-Auth,Web-App-Dev,Web-Net-Ext,Web-Net-Ext45,Web-Asp-Net,Web-Asp-Net45,Web-ISAPI-Ext,Web-ISAPI-Filter'
-       Install-LabWindowsFeature -ComputerName $SCCMServerName -FeatureName 'NET-HTTP-Activation,NET-Non-HTTP-Activ,NET-Framework-45-ASPNET,NET-WCF-HTTP-Activation45,BITS,RDC'
+    #SCCM Needs a ton of additional features installed...
+    Install-LabWindowsFeature -ComputerName $SCCMServerName -FeatureName 'FS-FileServer,Web-Mgmt-Tools,Web-Mgmt-Console,Web-Mgmt-Compat,Web-Metabase,Web-WMI,Web-WebServer,Web-Common-Http,Web-Default-Doc,Web-Dir-Browsing,Web-Http-Errors,Web-Static-Content,Web-Http-Redirect,Web-Health,Web-Http-Logging,Web-Log-Libraries,Web-Request-Monitor,Web-Http-Tracing,Web-Performance,Web-Stat-Compression,Web-Dyn-Compression,Web-Security,Web-Filtering,Web-Windows-Auth,Web-App-Dev,Web-Net-Ext,Web-Net-Ext45,Web-Asp-Net,Web-Asp-Net45,Web-ISAPI-Ext,Web-ISAPI-Filter'
+    Install-LabWindowsFeature -ComputerName $SCCMServerName -FeatureName 'NET-HTTP-Activation,NET-Non-HTTP-Activ,NET-Framework-45-ASPNET,NET-WCF-HTTP-Activation45,BITS,RDC'
 
-       #Before we start the SCCM Install, restart the computer
-       Restart-LabVM -ComputerName $SCCMServerName -Wait
+    #Before we start the SCCM Install, restart the computer
+    Restart-LabVM -ComputerName $SCCMServerName -Wait
 
-       #Prepare the INI File to be used for the unattended SCCM Install
-       $setupConfigFileContent = "
+    #Build the Installation unattended .INI file
+    $setupConfigFileContent = "
 [Identification]
 Action=InstallPrimarySite
       
@@ -215,13 +207,48 @@ UseProxy=0
 
        Copy-LabFileItem -Path "$SCCMIniFileLocation\ConfigMgrUnattend.ini"  -DestinationFolderPath C:\Install -ComputerName $SCCMServerName
 
-
        Invoke-LabCommand -ActivityName 'Install SCCM' -ComputerName $SCCMServerName -ScriptBlock {
             #SQL Server does not like creating databases without the directories already existing, so make sure to create them first
             New-Item -Path 'D:\CMSQL\SQLDATA' -ItemType Directory -Force | Out-Null
             New-Item -Path 'D:\CMSQL\SQLLOGS' -ItemType Directory -Force | Out-Null
-
+            #Install SCCM. This step will take quite some time.
             Start-Process -FilePath "C:\Install\SCCM1702\SMSSETUP\BIN\X64\setup.exe" -ArgumentList "/Script ""C:\Install\ConfigMgrUnattend.ini"" /NoUserInput" -Wait
         }  
 
+}
+#Cleanup from last run
+Remove-Item -Path 'C:\Temp\SCCMLab.log' -Force -ErrorAction SilentlyContinue
+Start-Transcript -Path 'C:\Temp\SCCMLab.log'
+
+$labName = 'SCCMLab'
+$labSources = Get-LabSourcesLocation
+$SCCMServerName = 'SCCMServer'
+
+$PSDefaultParameterValues = @{
+    'Add-LabMachineDefinition:Network' = $labName
+    'Add-LabMachineDefinition:ToolsPath'= "$labSources\Tools"
+    'Add-LabMachineDefinition:DomainName' = 'sccmlab.local'
+    'Add-LabMachineDefinition:DnsServer1' = '192.168.40.10'
+    'Add-LabMachineDefinition:OperatingSystem' = 'Windows Server 2016 SERVERSTANDARD'
+}
+
+New-LabDefinition -Name $LabName -DefaultVirtualizationEngine HyperV -VmPath "C:\Hyper-V\Automation-Lab"
+Add-LabVirtualNetworkDefinition -Name $LabName -AddressSpace 192.168.40.0/24
+Add-LabIsoImageDefinition -Name SQLServer2014 -Path $labSources\ISOs\en_sql_server_2014_standard_edition_x64_dvd_3932034.iso
+
+Add-LabMachineDefinition -Name DC1 -Memory 2GB -Roles RootDC -IPAddress '192.168.40.10'
+
+#Add the SQL ROle definition. SCCM requires a specific Collation setting, so pass that in
+$roles = (Get-LabMachineRoleDefinition -Role SQLServer2014 -Properties @{ Collation = 'SQL_Latin1_General_CP1_CI_AS' })
+Add-LabDiskDefinition -Name SCCMData -DiskSizeInGb 100
+Add-LabMachineDefinition -Name $SCCMServerName -DiskName SCCMData -Memory 4GB -Processors 4 -Roles $roles -IpAddress '192.168.40.20' 
+
+#Do the installation
+Install-Lab
+
+#Save a snapshot of the machines during development, remove for production deployments
+Checkpoint-LABVM -All -SnapshotName 'After Build'
+
+Install-SCCM -SCCMServerName $SCCMServerName -SCCMBinariesDirectory 'SCCM1702' -SCCMPreReqsDirectory 'SCCMPreReqs'
+      
 Show-LabDeploymentSummary -Detailed
