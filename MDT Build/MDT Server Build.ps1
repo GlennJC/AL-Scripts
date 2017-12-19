@@ -1,7 +1,11 @@
 ﻿
-
-#Author: Glenn Corbett @glennjc (GitHub)
-#Version: 1.0, 15/12/2017
+<#
+    Author: Glenn Corbett @glennjc (GitHub)
+    Version: 1.1, 19/12/2017
+    Revision History (yyyy-mm-dd)
+    1.0 - 2017-12-12 Initial Release
+    1.1 - 2017-12-19 Optimised code for mounting ISO files and retrieving mounted driver letter, fix provied by @randree
+#>
 
 function Install-MDTDHCP ($ComputerName, $DHCPScopeName, $DHCPScopeStart, $DHCPScopeEnd, $DHCPScopeMask, $DHCPScopeDescription) {
     <#
@@ -129,11 +133,13 @@ function Import-MDTOS {
     #If we were passed an ISO path, use that
     if ($ISOPath) {
         #Mount the ISO into the VM
-        Mount-LabIsoImage -IsoPath $ISOPath -ComputerName $ComputerName
+        #Fix provied by @randree to use passed back mount object which contains the drive letter
+        $MountedOSImage = Mount-LabIsoImage -IsoPath $ISOPath -ComputerName $ComputerName -PassThru
     
     } else {
         #Mount the ISO Referenced by the ISOPath property of the AutomatedLab.OperatingSystem Type
-        Mount-LabIsoImage -IsoPath $OperatingSystem.ISOPath -ComputerName $ComputerName
+        #Fix provied by @randree to use passed back mount object which contains the drive letter
+        $MountedOSImage = Mount-LabIsoImage -IsoPath $OperatingSystem.ISOPath -ComputerName $ComputerName -PassThru
     }
 
     #Work out what the friendly name for the OS should be
@@ -151,11 +157,6 @@ function Import-MDTOS {
             $OSFriendlyName = $OperatingSystem.OperatingSystemName
         }
     }
-
-    #Get the Volume ID Assigned to the Removable Drive within the VM (will need this for the Import-MDTOperatingSystem Call)
-    $OSImageDriveLetter = Invoke-LabCommand -ComputerName $ComputerName -ScriptBlock {
-        Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 5} | Select-Object DeviceID
-    } -PassThru -NoDisplay
 
     Invoke-LabCommand -ActivityName "Import Operating System - $OSFriendlyName" -ComputerName $ComputerName -ScriptBlock {
         param  
@@ -189,7 +190,7 @@ function Import-MDTOS {
         #SYMPTOM: Only the last set of operating systems are listed in deployment workbench, even though all OS source files are present
         Start-Sleep -Seconds 30
     
-    } -ArgumentList $OSImageDriveLetter.DeviceID, $DeploymentFolder, $OSFriendlyName -PassThru
+    } -ArgumentList $MountedOSImage.DriveLetter, $DeploymentFolder, $OSFriendlyName -PassThru
 
     Write-ScreenInfo 'Dismounting ISO Files'
     Dismount-LabIsoImage -ComputerName $ComputerName
