@@ -393,10 +393,10 @@ function Install-MDT {
        $MDTDownloadURL = New-Object System.Uri($MDTDownloadLocation)
        $MDTInstallFileName = $MDTDownloadURL.Segments[$MDTDownloadURL.Segments.Count-1]
    
-       Write-ScreenInfo "Copying MDT Install Files to server 'MDTServer'..."
+       Write-ScreenInfo "Copying MDT Install Files to server $ComputerName..."
        Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $MDTInstallFileName) -DestinationFolderPath C:\Install -ComputerName $ComputerName
    
-       Write-ScreenInfo "Copying ADK Install Files to server 'MDTServer'..."
+       Write-ScreenInfo "Copying ADK Install Files to server $ComputerName..."
        Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath 'ADK') -DestinationFolderPath C:\Install -ComputerName $ComputerName -Recurse
    
        Write-ScreenInfo "Installing ADK on server '$ComputerName'..."
@@ -410,7 +410,7 @@ function Install-MDT {
            Add-WindowsFeature WDS -IncludeManagementTools | Out-Null
        }
    
-       Write-ScreenInfo "Installing 'MDT' on server 'MDTServer'..."
+       Write-ScreenInfo "Installing 'MDT' on server $ComputerName..."
        Install-LabSoftwarePackage -ComputerName $ComputerName -LocalPath "C:\Install\$MDTInstallFileName" -CommandLine '/qb'
    
        Invoke-LabCommand -ActivityName 'Configure MDT' -ComputerName $ComputerName -ScriptBlock {
