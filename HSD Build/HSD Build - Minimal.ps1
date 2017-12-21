@@ -102,7 +102,7 @@ Invoke-LabCommand -ActivityName 'Configure RDS' -ComputerName 'HSD-DC01' -Script
 # + PSComputerName        : HSD-HSD1
 #If this exact command is rerun later on after the lab has been built, it succeeds. Code will now try to create the Session Collection multiple times until it succeeds
 #TO BE FIXED: See if there is an existing PS cmdlet to query the RDS instance that means it is ready to create a session collection. Previous configuration checked the sesison broker, however
-#   this does not appear to be the correct condition check, however it does resolve the Add-RDServer timing issue above.
+#   this does not appear to be the correct condition check. It does however resolve the Add-RDServer timing issue above.
 Write-ScreenInfo -Message "Creating RD Session Collection " -NoNewline
 
 $totalretries = 20
