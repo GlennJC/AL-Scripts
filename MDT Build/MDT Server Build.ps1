@@ -347,7 +347,7 @@ function Install-MDT {
     .NOTES
        1. ADK must be downloaded manually, and placed in a subfolder called ADK within $labsources\SoftwarePackages. The function checks for the existence of the folder
             and errors out if it is not found. Due to ADK requiring a bootstrap download and then seperate packages download, the AL Get-LabInternetFile is not directly usable for this task (unless I'm mistaken)
-       2. MDT Install files are downloaded from the referenced $MDTDownloadLocation URL, if new version of MDT is released, this URL will need to be changed
+       2. MDT Install files are downloaded from the referenced $MDTDownloadLocation URL, if new version of MDT is released, this URL will need to be changed (Tested with version 8450 released 22/12/17, URL didnt change from v8443)
        3. As at AL 4.5.0 - Install-LabWindowsFeature does not support a -IncludeManagementTools switch, hence .NET is installed using the AL cmdlet as it mounts the ISO to access
             the correct files. WDS is installed using a standard Invoke-LabCommand to allow the -IncludeManagementTools switch to be passed
        4. Start-Sleep commands are in the code to prevent some race conditions that occured during development.  Later fix to find the specific wait condition (ie service startup) and build more smarts into routine
