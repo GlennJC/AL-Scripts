@@ -124,7 +124,6 @@ Copy-LabFileItem -Path "$labSources\SoftwarePackages\Microsoft Office Pro Plus 2
 Invoke-LabCommand -ActivityName 'Install Office and Publish Apps' -ComputerName 'HSD-HSD1' -ScriptBlock {
     #Install Office
     Start-Process -FilePath "C:\Install\Microsoft Office Pro Plus 2016\Setup.exe" -ArgumentList "/adminfile Office_R2.MSP" -Wait
-    New-RDRemoteapp -Alias Firefox -DisplayName Firefox -FilePath "C:\Program Files\Mozilla Firefox\firefox.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
     New-RDRemoteapp -Alias 'Microsoft Word' -DisplayName 'Microsoft Word' -FilePath "C:\Program Files (x86)\Microsoft Office\Office16\WINWORD.EXE" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
     New-RDRemoteapp -Alias 'Microsoft Excel' -DisplayName 'Microsoft Excel' -FilePath "C:\Program Files (x86)\Microsoft Office\Office16\EXCEL.EXE" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
 }
@@ -142,12 +141,18 @@ Copy-LabFileItem -Path $downloadTargetFolder -DestinationFolderPath $destination
 Invoke-LabCommand -ActivityName 'Install Firefox and Publish Applications' -ComputerName 'HSD-HSD1' -ScriptBlock {
     Start-Process -FilePath "C:\Install\Applications\Mozilla Firefox\Firefox%20Setup%2057.0.exe" -ArgumentList "-ms" -Wait
     Import-Module RemoteDesktop
+    New-RDRemoteapp -Alias Firefox -DisplayName Firefox -FilePath "C:\Program Files\Mozilla Firefox\firefox.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
     New-RDRemoteapp -Alias Wordpad -DisplayName WordPad -FilePath "C:\Program Files\Windows NT\Accessories\wordpad.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'  
     #Re-Enable the Published Desktop
     Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\SessionCollectio\RemoteDesktops\SessionCollectio' -Name 'ShowInPortal' -Value 1
 }
 
+#Microsoft GVLK for Office 2013, from:
+#https://technet.microsoft.com/en-us/library/dn385360.aspx
 #YC7DK-G2NP3-2QQC3-J6H88-GVGXT        
+
+#Microsoft GVLK for Office 2016, from:
+#https://technet.microsoft.com/en-us/library/dn385360(v=office.16).aspx
 #XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99
 
  
