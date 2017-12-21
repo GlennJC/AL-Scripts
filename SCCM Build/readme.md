@@ -11,9 +11,9 @@ Prerequisites:
     Tested with SQL Server 2014
 - SCCM Prerequisites downloaded using SETUPDL.EXE, available in SCCM package in .\SMSSETUP\BIN\X64. It is assumed that the guest machine does not have internet access, so this set of packages (approx 600mb) must be downloaded and placed into the $LabSources\SoftwarePackages\SCCMPreReqs folder
 
-Known Restrictios/Limitations:
+Known Restrictions/Limitations:
 - Currently tested with a single AD Domain and Dedicated SCCM+SQL Server
-- SCCM Server must have a second disk attached to hold the SCCM Binaries, SQL Databases, and SCCM Content Shares (assumed to be D:) - A defaultinstall of SQL + SCCM + ADK uses approx 20GB of disk space, 60GB or more is recommended if Operting Systems, Applications, and Drivers will be installed
+- SCCM Server must have a second disk attached to hold the SCCM Binaries, SQL Databases, and SCCM Content Shares (assumed to be D:) - A defaultinstall of SQL + SCCM + ADK uses approx 20GB of disk space, 60GB or more is recommended if Operating Systems, Applications, and Drivers will be installed
 - A minimum of 4gb of memory + multiple vCPU's is recommended due to number of running processes + SQL Server
 - SCCM Requires a specific SQL collation setting, which needs to be specific during the Virtual Machine definition phase:
 
