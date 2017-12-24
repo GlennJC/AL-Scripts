@@ -127,7 +127,6 @@ function Import-MDTOS {
     )
 
     #Ensure that no other ISO images are mounted
-    Write-ScreenInfo 'Dismounting any existing ISO Files'
     Dismount-LabIsoImage -ComputerName $ComputerName
 
     #If we were passed an ISO path, use that
@@ -192,7 +191,6 @@ function Import-MDTOS {
     
     } -ArgumentList $MountedOSImage.DriveLetter, $DeploymentFolder, $OSFriendlyName -PassThru
 
-    Write-ScreenInfo 'Dismounting ISO Files'
     Dismount-LabIsoImage -ComputerName $ComputerName
 } 
 
@@ -299,7 +297,7 @@ function Import-MDTApplications {
                 New-Item -path 'DS001:\Applications' -enable 'True' -Name $($App.AppPath) -Comments '' -ItemType 'folder' -ErrorAction SilentlyContinue | Out-Null
 
                 #Actually Import the application into MDT
-                Import-MDTApplication -path "DS001:\Applications\$($App.AppPath)" -enable "True" -Name $($App.Name) -ShortName $($App.ShortName) -Version $($App.Version) -Publisher $($App.Publisher) -Language $($App.Language) -CommandLine $($App.CommandLine) -WorkingDirectory $AppWorkingDirectory -ApplicationSourcePath $SourcePath -DestinationFolder $AppDestinationFolder -Verbose
+                Import-MDTApplication -path "DS001:\Applications\$($App.AppPath)" -enable "True" -Name $($App.Name) -ShortName $($App.ShortName) -Version $($App.Version) -Publisher $($App.Publisher) -Language $($App.Language) -CommandLine $($App.CommandLine) -WorkingDirectory $AppWorkingDirectory -ApplicationSourcePath $SourcePath -DestinationFolder $AppDestinationFolder | Out-Null
 
                 #Sleep between importing applications, otherwise apps dont get written to the Applications.XML file correctly
                 Start-Sleep -Seconds 10
@@ -443,7 +441,7 @@ function Install-MDT {
            Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
            
            if (!(Get-PSDrive "DS001" -ErrorAction SilentlyContinue)) {
-               New-PSDrive -Name "DS001" -PSProvider MDTProvider -Root $Folder            
+               New-PSDrive -Name "DS001" -PSProvider MDTProvider -Root $Folder  | Out-Null        
            }
    
            #Configure Settings for WINPE Image prior to generating

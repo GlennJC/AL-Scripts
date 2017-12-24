@@ -3,7 +3,7 @@
 .SYNOPSIS
     This script deployed a minimal RDS Desktop Deployment with One Domain Controller and a RDS Session Host Server
 .DESCRIPTION
-    Windows Domain Controller, holding thr RDS-LICENSING tole
+    Windows Domain Controller, holding the RDS-LICENSING tole
     A Windows Server holding all other RDS roles, as well as being a session host Server
     No RDS Gateway Role in use
 
@@ -55,7 +55,7 @@ Foreach ($machine in $machines)
 
 if ($hostFileAddedEntries)
 {
-    Write-ScreenInfo -Message "$hostFileAddedEntries records have been added to the hosts using machine FQDN's. Clean them up using 'Remove-Lab' or manually if needed" -Type Warning
+    Write-ScreenInfo -Message "$hostFileAddedEntries records have been added to the hosts using machine FQDNs. Clean them up using 'Remove-Lab' or manually if needed" -Type Warning
 }
 
 #Save a snapshot of the machines during development, remove for production deployments
@@ -63,10 +63,8 @@ Checkpoint-LABVM -All -SnapshotName 'After Build'
 
 Invoke-LabCommand -ActivityName 'Configure Remote Desktop Services' -ComputerName 'HSD-DC01' -ScriptBlock {
     Import-Module RemoteDesktop
-    New-RDSessionDeployment -ConnectionBroker 'HSD-HSD1.hsdlab.local' -WebAccessServer 'HSD-HSD1.hsdlab.local' -SessionHost 'HSD-HSD1.hsdlab.local'  
+    New-RDSessionDeployment -ConnectionBroker 'HSD-HSD1.hsdlab.local' -WebAccessServer 'HSD-HSD1.hsdlab.local' -SessionHost 'HSD-HSD1.hsdlab.local' 
 }
-
-Restart-LabVM -ComputerName 'HSD-HSD1' -Wait
 
 #Wait for the Connection Broker Service to become available
 Write-ScreenInfo -Message "Waiting for Connection Broker on 'HSD-HSD1.hsdlab.local' to become available " -NoNewline
@@ -103,21 +101,14 @@ Invoke-LabCommand -ActivityName 'Configure RDS' -ComputerName 'HSD-DC01' -Script
 #If this exact command is rerun later on after the lab has been built, it succeeds. Code will now try to create the Session Collection multiple times until it succeeds
 #TO BE FIXED: See if there is an existing PS cmdlet to query the RDS instance that means it is ready to create a session collection. Previous configuration checked the sesison broker, however
 #   this does not appear to be the correct condition check. It does however resolve the Add-RDServer timing issue above.
-Write-ScreenInfo -Message "Creating RD Session Collection " -NoNewline
+Write-ScreenInfo -Message "Creating RD Session Collection"
 
-$totalretries = 20
-$retries=0
+$cred = New-Object pscredential("HSDLAB\Administrator", ("Somepass1" | ConvertTo-SecureString -AsPlainText -Force))
 
-do {
-    $result = Invoke-LabCommand -ComputerName 'HSD-DC01' -ScriptBlock { 
-        New-RDSessionCollection –CollectionName 'SessionCollection' –SessionHost 'HSD-HSD1.hsdlab.local' –CollectionDescription 'Desktop Session Collection' –ConnectionBroker 'HSD-HSD1.hsdlab.local'       
-    } -PassThru -NoDisplay
-    $retries++
-    Write-ScreenInfo '.' -NoNewLine
-    Start-Sleep -Seconds 15
-} until (($result) -or ($retries -ge $totalretries))
-
-Write-ScreenInfo 'Done'
+Invoke-LabCommand -ComputerName "HSD-HSD1" -Credential $cred  -ScriptBlock {
+    Import-Module RemoteDesktop
+    New-RDSessionCollection –CollectionName "SessionCollection" –CollectionDescription "Desktop Session Collection" –SessionHost "HSD-HSD1.hsdlab.local"
+} -PassThru -NoDisplay
 
 Copy-LabFileItem -Path "$labSources\SoftwarePackages\Microsoft Office Pro Plus 2016" -DestinationFolderPath 'C:\Install' -ComputerName 'HSD-HSD1'-Recurse
 
@@ -138,14 +129,14 @@ Get-LabInternetFile -Uri $FireFoxURI -Path $downloadTargetFolder -ErrorAction St
 $destinationFolderName = Join-Path -Path 'C:\Install' -ChildPath 'Applications'
 Copy-LabFileItem -Path $downloadTargetFolder -DestinationFolderPath $destinationFolderName -ComputerName 'HSD-HSD1'-Recurse
 
-Invoke-LabCommand -ActivityName 'Install Firefox and Publish Applications' -ComputerName 'HSD-HSD1' -ScriptBlock {
-    Start-Process -FilePath "C:\Install\Applications\Mozilla Firefox\Firefox%20Setup%2057.0.exe" -ArgumentList "-ms" -Wait
-    Import-Module RemoteDesktop
-    New-RDRemoteapp -Alias Firefox -DisplayName Firefox -FilePath "C:\Program Files\Mozilla Firefox\firefox.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
-    New-RDRemoteapp -Alias Wordpad -DisplayName WordPad -FilePath "C:\Program Files\Windows NT\Accessories\wordpad.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'  
+#Invoke-LabCommand -ActivityName 'Install Firefox and Publish Applications' -ComputerName 'HSD-HSD1' -ScriptBlock {
+#    Start-Process -FilePath "C:\Install\Applications\Mozilla Firefox\Firefox%20Setup%2057.0.exe" -ArgumentList "-ms" -Wait
+#    Import-Module RemoteDesktop
+#    New-RDRemoteapp -Alias Firefox -DisplayName Firefox -FilePath "C:\Program Files\Mozilla Firefox\firefox.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
+#    New-RDRemoteapp -Alias Wordpad -DisplayName WordPad -FilePath "C:\Program Files\Windows NT\Accessories\wordpad.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'  
     #Re-Enable the Published Desktop
-    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\SessionCollectio\RemoteDesktops\SessionCollectio' -Name 'ShowInPortal' -Value 1
-}
+#    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\SessionCollectio\RemoteDesktops\SessionCollectio' -Name 'ShowInPortal' -Value 1
+#}
 
 #Microsoft GVLK for Office 2013, from:
 #https://technet.microsoft.com/en-us/library/dn385360.aspx
