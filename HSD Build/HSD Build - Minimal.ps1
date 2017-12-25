@@ -41,6 +41,7 @@ Add-LabMachineDefinition -Name HSD-HSD1 -Memory 4GB -IPAddress '192.168.60.20'
 Install-Lab
 
 #Add fully qualified host names to the hosts file (otherwise apps launched via RemoteApp from the host will fail since it launches using the FQDN for the Remote Desktop Client Session)
+#NOTE: This issue has been fixed in AutomatedLab.psm1 as at 23/12/17 (#206), can be removes once comitted in next public release of AL.
 $machines = Get-LabMachine
 $hostFileAddedEntries = 0
 #Modified code from AutomatedLab.psm1 to add host entries, modified to add FQDN names (otherwise apps launched via RemoteApp from the host will fail)
@@ -66,7 +67,7 @@ Invoke-LabCommand -ActivityName 'Configure Remote Desktop Services' -ComputerNam
     New-RDSessionDeployment -ConnectionBroker 'HSD-HSD1.hsdlab.local' -WebAccessServer 'HSD-HSD1.hsdlab.local' -SessionHost 'HSD-HSD1.hsdlab.local' 
 }
 
-#Wait for the Connection Broker Service to become available
+#Wait for the Connection Broker Service to become available, as New-RDSessionDeployment does a machine restart during the activity
 Write-ScreenInfo -Message "Waiting for Connection Broker on 'HSD-HSD1.hsdlab.local' to become available " -NoNewline
 
 $totalretries = 20
@@ -90,25 +91,9 @@ Invoke-LabCommand -ActivityName 'Configure RDS' -ComputerName 'HSD-DC01' -Script
     Add-RDServer -Server 'HSD-DC01.hsdlab.local' -Role RDS-LICENSING -ConnectionBroker 'HSD-HSD1.hsdlab.local' 
     Set-RDLicenseConfiguration -LicenseServer 'HSD-DC01.hsdlab.local' -Mode PerUser -ConnectionBroker 'HSD-HSD1.hsdlab.local' -Force
     #Need to add the License server to the 'Terminal Server License Servers' group in AD
-    Add-ADGroupMember 'Terminal Server License Servers' 'HSD-DC01$'   
+    Add-ADGroupMember 'Terminal Server License Servers' 'HSD-DC01$'
+    New-RDSessionCollection -CollectionName 'SessionCollection' -SessionHost 'HSD-HSD1.hsdlab.local' -ConnectionBroker 'HSD-HSD1.hsdlab.local' -PooledUnmanaged   
 }
-
-#ISSUE: For some reason, even though the Connection Broker is up and running, errors get thrown trying to create the session collection:
-# A positional parameter cannot be found that accepts argument 'HSD-HSD1.hsdlab.local'.
-# + CategoryInfo          : InvalidArgument: (:) [New-RDSessionCollection], ParameterBindingException
-# + FullyQualifiedErrorId : PositionalParameterNotFound,New-RDSessionCollection
-# + PSComputerName        : HSD-HSD1
-#If this exact command is rerun later on after the lab has been built, it succeeds. Code will now try to create the Session Collection multiple times until it succeeds
-#TO BE FIXED: See if there is an existing PS cmdlet to query the RDS instance that means it is ready to create a session collection. Previous configuration checked the sesison broker, however
-#   this does not appear to be the correct condition check. It does however resolve the Add-RDServer timing issue above.
-Write-ScreenInfo -Message "Creating RD Session Collection"
-
-$cred = New-Object pscredential("HSDLAB\Administrator", ("Somepass1" | ConvertTo-SecureString -AsPlainText -Force))
-
-Invoke-LabCommand -ComputerName "HSD-HSD1" -Credential $cred  -ScriptBlock {
-    Import-Module RemoteDesktop
-    New-RDSessionCollection –CollectionName "SessionCollection" –CollectionDescription "Desktop Session Collection" –SessionHost "HSD-HSD1.hsdlab.local"
-} -PassThru -NoDisplay
 
 Copy-LabFileItem -Path "$labSources\SoftwarePackages\Microsoft Office Pro Plus 2016" -DestinationFolderPath 'C:\Install' -ComputerName 'HSD-HSD1'-Recurse
 
@@ -119,7 +104,6 @@ Invoke-LabCommand -ActivityName 'Install Office and Publish Apps' -ComputerName 
     New-RDRemoteapp -Alias 'Microsoft Excel' -DisplayName 'Microsoft Excel' -FilePath "C:\Program Files (x86)\Microsoft Office\Office16\EXCEL.EXE" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
 }
 
-
 $FireFoxURI = 'https://ftp.mozilla.org/pub/firefox/releases/57.0/win64/en-US/Firefox%20Setup%2057.0.exe'
 $downloadTargetFolder = Join-Path -Path $labSources -ChildPath SoftwarePackages
 $downloadTargetFolder = Join-Path -Path $downloadTargetFolder -ChildPath 'Applications'
@@ -129,25 +113,19 @@ Get-LabInternetFile -Uri $FireFoxURI -Path $downloadTargetFolder -ErrorAction St
 $destinationFolderName = Join-Path -Path 'C:\Install' -ChildPath 'Applications'
 Copy-LabFileItem -Path $downloadTargetFolder -DestinationFolderPath $destinationFolderName -ComputerName 'HSD-HSD1'-Recurse
 
-#Invoke-LabCommand -ActivityName 'Install Firefox and Publish Applications' -ComputerName 'HSD-HSD1' -ScriptBlock {
-#    Start-Process -FilePath "C:\Install\Applications\Mozilla Firefox\Firefox%20Setup%2057.0.exe" -ArgumentList "-ms" -Wait
-#    Import-Module RemoteDesktop
-#    New-RDRemoteapp -Alias Firefox -DisplayName Firefox -FilePath "C:\Program Files\Mozilla Firefox\firefox.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
-#    New-RDRemoteapp -Alias Wordpad -DisplayName WordPad -FilePath "C:\Program Files\Windows NT\Accessories\wordpad.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'  
+Invoke-LabCommand -ActivityName 'Install Firefox and Publish Applications' -ComputerName 'HSD-HSD1' -ScriptBlock {
+    #Install Firefox
+    Start-Process -FilePath "C:\Install\Applications\Mozilla Firefox\Firefox%20Setup%2057.0.exe" -ArgumentList "-ms" -Wait
+    #Add an icon for Firefox and Wordpas as examples
+    Import-Module RemoteDesktop
+    New-RDRemoteapp -Alias Firefox -DisplayName Firefox -FilePath "C:\Program Files\Mozilla Firefox\firefox.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'      
+    New-RDRemoteapp -Alias Wordpad -DisplayName WordPad -FilePath "C:\Program Files\Windows NT\Accessories\wordpad.exe" -ShowInWebAccess 1 -CollectionName 'SessionCollection' -ConnectionBroker 'HSD-HSD1.hsdlab.local'  
     #Re-Enable the Published Desktop
-#    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\SessionCollectio\RemoteDesktops\SessionCollectio' -Name 'ShowInPortal' -Value 1
-#}
+    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\SessionCollectio\RemoteDesktops\SessionCollectio' -Name 'ShowInPortal' -Value 1
+}
 
-#Microsoft GVLK for Office 2013, from:
-#https://technet.microsoft.com/en-us/library/dn385360.aspx
-#YC7DK-G2NP3-2QQC3-J6H88-GVGXT        
-
-#Microsoft GVLK for Office 2016, from:
-#https://technet.microsoft.com/en-us/library/dn385360(v=office.16).aspx
-#XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99
-
- 
-Checkpoint-LABVM -All -SnapshotName 'After RDS Install'
+#Save a snapshot of the machines during development, remove for production deployments
+Checkpoint-LABVM -All -SnapshotName 'After Lab Completion'
       
 Show-LabDeploymentSummary -Detailed
 
