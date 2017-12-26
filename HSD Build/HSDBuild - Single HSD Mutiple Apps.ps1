@@ -7,7 +7,7 @@ This is an example lab using AL that performs the folliwng activites:
     5. Installs Firefox via an internet download, and Publishes the application
     6. Installs a VL edition of Office 2016 and Publishes Word and Excel
 
-    Note: VL Editions of Office are required as non-VL editions immediately raise errors on Session Hosts regarding an unsupported configuration
+    Note: VL Editions of Office are required as non-VL editions immediately raise errors on Session Hosts regarding an unsupported configuration (licensing issue essentially)
 #>
 
 $oldverbose = $VerbosePreference
