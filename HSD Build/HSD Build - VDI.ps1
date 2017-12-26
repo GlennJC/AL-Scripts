@@ -20,7 +20,7 @@
 BAH: Windows does NOT currently support nested virtualisation for the virtualisation host portion of an RDS VDI deployment, and also does not support Windows 10
     as a virtualisation host for RDS VDI.
 
-26/12/17 - Will revisit this script when a spare virtualisation host becomes available in my hardware lab (or nested virtualisation works for RDS).
+26/12/17 - Will revisit this script when a spare virtualisation host becomes available for testing (or nested virtualisation works for RDS).
 
 #>
 
