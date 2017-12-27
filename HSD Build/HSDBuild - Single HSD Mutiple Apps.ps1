@@ -1,11 +1,12 @@
 <#
 This is an example lab using AL that performs the folliwng activites:
-    1. Creates a single DC and RDS Session Host
+    1. Creates a single DC and multiple RDS Session Hosts
     2. Uses AutomationLab to build the Lab Machines
     3. Installs RemoteDesktop Services
     4. Publishes the standard wordpad application
     5. Installs Firefox via an internet download, and Publishes the application
     6. Installs a VL edition of Office 2016 and Publishes Word and Excel
+    7. Publishes the Full Desktop RemoteApp
 
     Note: VL Editions of Office are required as non-VL editions immediately raise errors on Session Hosts regarding an unsupported configuration (licensing issue essentially)
 #>
