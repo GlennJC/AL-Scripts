@@ -1,23 +1,15 @@
 <#
 .SYNOPSIS
-    This module contains the Remote Desktop Services Fucntions to Install a fucntion RDS Lab in concert with AutomatedLab
+    This module contains the Remote Desktop Services Fucntions to Install a funtioning RDS Lab in concert with AutomatedLab
 .DESCRIPTION
     Author: Glenn Corbett (@GlennJC)
     Version 1.0.20171226.1938
-.EXAMPLE
-    PS C:\> <example usage>
-    Explanation of what the example does
-.INPUTS
-    Inputs (if any)
-.OUTPUTS
-    Output (if any)
 .NOTES
     This is the initial version.
     TODO:
         Additional Error checking for all calls
         Additional Range Checking for passed in values
         Additional Error Checking for file existence for Install-RDSApplication
-        Better Handling of multiple session hosts in Install-RDSApplication
 #>
 
 Function Install-RDS {
@@ -65,6 +57,7 @@ Function Install-RDS {
     #NOTE: This issue has been fixed in AutomatedLab.psm1 as at 23/12/17 (#206), can be removed once committed in next public release of AL.
     $machines = Get-LabMachine
     $hostFileAddedEntries = 0
+    $labname = (Get-Lab).Name
 
     #Modified code from AutomatedLab.psm1 to add host entries, modified to add FQDN names (otherwise apps launched via RemoteApp from the host will fail)
     #entries are added to the existing section created by AL, so will be removed when the Remove-Lab command is executed.
@@ -187,9 +180,9 @@ function Install-RDSApplication {
 
     param (
        
-        #Session host to install the application on
+        #Session hosts to install the application on
         [Parameter(Mandatory)]
-        [AutomatedLab.Machine]$SessionHost,
+        [AutomatedLab.Machine[]]$SessionHost,
 
         #URL for the application to be downloaded
         [Parameter(ParameterSetName='ByURL')]
@@ -222,53 +215,29 @@ function Install-RDSApplication {
             $internalUri = New-Object System.Uri($URL)
             Get-LabInternetFile -Uri $internalUri -Path $downloadTargetFolder -ErrorAction Stop 
             $DownloadedFileName = $internalUri.Segments[$internalUri.Segments.Count-1]
+            Write-ScreenInfo 'Copying source files to Target Servers' -TaskStart
             Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $DownloadedFileName) -DestinationFolderPath C:\Install -ComputerName $SessionHost
-        
-            Invoke-LabCommand -ActivityName 'Install Application From URL' -ComputerName $SessionHost -ScriptBlock {
+            Write-ScreenInfo 'Finished Copying Files' -TaskEnd
 
-                param (
-                    [string]$DownloadedFileName,
-
-                    [string]$InstallArguments
-                )
-
-                Start-Process -FilePath "C:\Install\$DownloadedFileName" -ArgumentList "$InstallArguments" -Wait
-            } -ArgumentList $DownloadedFileName, $InstallArguments
-
+            $job = Install-LabSoftwarePackage -ComputerName $SessionHost -LocalPath "C:\Install\$DownloadedFileName" -CommandLine $InstallArguments -AsJob -PassThru -ErrorAction Stop 
+            $result = Wait-LWLabJob -Job $job -NoNewLine -ProgressIndicator 10 -PassThru -ErrorAction Stop
         }
         'ByPath' {
-            Copy-LabFileItem -Path $DirectoryPath -DestinationFolderPath 'C:\Install' -ComputerName $SessionHost -Recurse   
-
-            Invoke-LabCommand -ActivityName 'Install Application from Path' -ComputerName $SessionHost -ScriptBlock {
-
-                param (
-                    [string]$InstallExecutable,
-
-                    [string]$InstallArguments
-                )
-
-                $ExecutePath = Join-Path -Path 'C:\Install' -ChildPath $InstallExecutable
-
-                Start-Process -FilePath $ExecutePath -ArgumentList "$InstallArguments" -Wait
-            } -ArgumentList $InstallExecutable, $InstallArguments
-  
+            Write-ScreenInfo 'Copying source directories to Target Servers' -TaskStart
+            Copy-LabFileItem -Path $DirectoryPath -DestinationFolderPath 'C:\Install' -ComputerName $SessionHost -Recurse 
+            Write-ScreenInfo 'Finished Copying Files' -TaskEnd
+            $job = Install-LabSoftwarePackage -ComputerName $SessionHost -LocalPath "C:\Install\$InstallExecutable" -CommandLine $InstallArguments -AsJob -PassThru -ErrorAction Stop 
+            $result = Wait-LWLabJob -Job $job -NoNewLine -ProgressIndicator 10 -PassThru -ErrorAction Stop
         }
         'ByISO' {
-            $MountedOSImage = Mount-LabIsoImage -IsoPath $ISOPath -ComputerName $SessionHost -PassThru
+            Write-ScreenInfo 'Mounting ISO on target servers' -TaskStart
+            $disk = Mount-LabIsoImage -ComputerName $SessionHost -IsoPath $ISOPath -PassThru -SupressOutput
+            Write-ScreenInfo 'Finished' -TaskEnd
 
-            Invoke-LabCommand -ActivityName 'Install Application from ISO' -ComputerName $SessionHost -AsJob -ScriptBlock {
-
-                param (
-                    [string]$ISOMountPoint,
-
-                    [string]$InstallExecutable,
-
-                    [string]$InstallArguments
-                )
-
-                Start-Process -FilePath "$ISOMountPoint\$InstallExecutable" -ArgumentList "$InstallArguments" -Wait
-            } -ArgumentList $MountedOSImage | Wait-Job | Out-Null
-
+            $job = Install-LabSoftwarePackage -ComputerName $SessionHost -LocalPath "$($disk.DriveLetter)\$InstallExecutable" -CommandLine $InstallArguments -AsJob -PassThru -ErrorAction Stop 
+            $result = Wait-LWLabJob -Job $job -NoNewLine -ProgressIndicator 10 -PassThru -ErrorAction Stop
+            Dismount-LabIsoImage -ComputerName $SessionHost -SupressOutput
+    
         }
     }
     
@@ -324,13 +293,13 @@ function Publish-RDSDesktop {
     param (
        
         [Parameter(Mandatory)]
-        [AutomatedLab.Machine[]]$SessionHost,
+        [AutomatedLab.Machine]$ConnectionBroker,
 
         [string]$CollectionName='Pool'
     )
 
     #This will run on each of the session hosts and re-enable the Full Desktop RemoteApp
-    Invoke-LabCommand -ActivityName 'Republish Full Desktop' -ComputerName $SessionHost -ScriptBlock {
+    Invoke-LabCommand -ActivityName 'Republish Full Desktop' -ComputerName $ConnectionBroker -ScriptBlock {
 
         param(
             [Parameter(Mandatory)]
@@ -345,8 +314,8 @@ function Publish-RDSDesktop {
             $RegistryCollName = $CollectionName
        }
 
-       Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\$RegistryCollName\RemoteDesktops\$RegistryCollName" -Name 'Name' -Value 'Full Desktop' -Verbose
-       Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\$RegistryCollName\RemoteDesktops\$RegistryCollName" -Name 'ShowInPortal' -Value 1 -Verbose
+       Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\$RegistryCollName\RemoteDesktops\$RegistryCollName" -Name 'Name' -Value 'Full Desktop' 
+       Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\CentralPublishedResources\PublishedFarms\$RegistryCollName\RemoteDesktops\$RegistryCollName" -Name 'ShowInPortal' -Value 1 
 
     } -ArgumentList $CollectionName
 
