@@ -3,13 +3,19 @@
     This module contains the Remote Desktop Services Fucntions to Install a funtioning RDS Lab in concert with AutomatedLab
 .DESCRIPTION
     Author: Glenn Corbett (@GlennJC)
-    Version 1.0.20171226.1938
+    Version 1.0.20171227.1256
 .NOTES
     This is the initial version.
     TODO:
         Additional Error checking for all calls
         Additional Range Checking for passed in values
         Additional Error Checking for file existence for Install-RDSApplication
+    Version History:
+    1.0.20171226.1938 - Initial Version
+    1.0.20171227.1256 - Updated Install-RDSApplication to better support multiple hosts + modified code to use equivalent AL cmdlets which frankly worked better
+                      - Updated function definition for Publish-RDDesktop to -ConnectionBroker rather than -SessionHost which is more reflective
+                            of the host you need to execute the action against
+
 #>
 
 Function Install-RDS {
