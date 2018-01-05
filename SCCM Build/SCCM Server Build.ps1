@@ -168,7 +168,7 @@ Action=InstallPrimarySite
       
 [Options]
 ProductID=EVAL
-SiteCode=CM1
+SiteCode=$SCCMSiteCode
 SiteName=Primary Site 1
 SMSInstallDir=D:\Program Files\Microsoft Configuration Manager
 SDKServer=$((Get-LabMachineDefinition -ComputerName $SCCMServerName).FQDN)
@@ -187,7 +187,7 @@ JoinCEIP=0
        
 [SQLConfigOptions]
 SQLServerName=$((Get-LabMachineDefinition -ComputerName $SCCMServerName).FQDN)
-DatabaseName=CM_CM1
+DatabaseName=CM_$SCCMSiteCode
 SQLSSBPort=4022
 SQLDataFilePath=D:\CMSQL\SQLDATA\
 SQLLogFilePath=D:\CMSQL\SQLLOGS\
@@ -224,6 +224,8 @@ $labName = 'SCCMLab'
 $labSources = Get-LabSourcesLocation
 $SCCMServerName = 'SCCMServer'
 
+New-LabDefinition -Name $LabName -DefaultVirtualizationEngine HyperV -VmPath "C:\Hyper-V\Automation-Lab"
+
 $PSDefaultParameterValues = @{
     'Add-LabMachineDefinition:Network' = $labName
     'Add-LabMachineDefinition:ToolsPath'= "$labSources\Tools"
@@ -232,7 +234,6 @@ $PSDefaultParameterValues = @{
     'Add-LabMachineDefinition:OperatingSystem' = 'Windows Server 2016 SERVERSTANDARD'
 }
 
-New-LabDefinition -Name $LabName -DefaultVirtualizationEngine HyperV -VmPath "C:\Hyper-V\Automation-Lab"
 Add-LabVirtualNetworkDefinition -Name $LabName -AddressSpace 192.168.40.0/24
 Add-LabIsoImageDefinition -Name SQLServer2014 -Path $labSources\ISOs\en_sql_server_2014_standard_edition_x64_dvd_3932034.iso
 
