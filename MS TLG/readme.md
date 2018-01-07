@@ -1,4 +1,4 @@
-These scripts are designed to proviude an Automated-Lab approach to the Microsoft Test Lab Guides (TLG) which are used to provide examples of Microsoft Technolgies and provide a platform for detailed learning and experemetation.
+These scripts are designed to proviude an Automated-Lab approach to the Microsoft Test Lab Guides (TLG) which are used to provide examples of Microsoft Technolgies and provide a platform for detailed learning and experimentation.
 
 The test lab guides have been superceded in a large part by the TechNet Virtual Labs, however the Technet Labs are typically time limited, and designed to showcase a particular activity (such as deploying SCCM). They are not really designed to allow for an open ended freeform approach to learning which I find much more useful than following a bouncing ball.
 
@@ -14,6 +14,8 @@ Initial intent of these scripts is to deploy the base Test Lab Guide configurati
 Additional scripts will be developed to encompass various labs as needs require.
 
 **Note:** Due to the lack of maintenance of many labs, the base configuration lab will be updated to support more current versions of Server and Desktop Operating Systems, as well as applications (such as System Center)
+
+Where possible, AutomatedLab processes and functions will be used for deployment activities.  Where deployment activities require developing powershell code, they will be organised as much as practical using the heading text within the Test Lab guide. This will allow individual activities to be isolated for performing manually via the GUI, or viewing the equivalent powershell code to perform the same activity as in the guide.
 
 Current Scripts:
 
