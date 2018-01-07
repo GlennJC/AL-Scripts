@@ -25,7 +25,6 @@ $CARole += Get-LabMachineRoleDefinition -Role CaRoot @{
     ValidityPeriodUnits = "2"
 } 
 
-
 Add-LabMachineDefinition -Name DC1 -Memory 2GB -Roles $DCRole,$CARole -IPAddress '10.0.0.1' -Network 'CORPNET'
 Add-LabMachineDefinition -Name APP1 -Memory 2GB -IPAddress '10.0.0.3' -Network 'CORPNET'
 Add-LabMachineDefinition -Name CLIENT1 -Memory 2GB -OperatingSystem 'Windows 7 ULTIMATE' -Network 'CORPNET'
