@@ -61,7 +61,7 @@ function Install-Application {
 
             $job = Install-LabSoftwarePackage -ComputerName $ComputerName -LocalPath "$($disk.DriveLetter)\$InstallExecutable" -CommandLine $InstallArguments -AsJob -PassThru -ErrorAction Stop 
             $result = Wait-LWLabJob -Job $job -NoNewLine -ProgressIndicator 10 -PassThru -ErrorAction Stop
-            Dismount-LabIsoImage -ComputerName $SessionHost -SupressOutput
+            Dismount-LabIsoImage -ComputerName $ComputerName -SupressOutput
     
         }
     }
