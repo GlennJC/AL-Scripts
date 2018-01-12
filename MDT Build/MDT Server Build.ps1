@@ -338,8 +338,9 @@ function Install-MDT {
        [string]$ComputerName - Name of the MDTServer prepared using AL
        [string]$DeploymentFolder - Fully Qualified path to house the deployment folder, directory will be created if it does not exist
        [string]$DeploymentShare - Share name to be created that points to the root of the deployment folder. Used by clients when deploying via settings in Bootstrap.ini
-       [string]$AdminUserID - Name of an account that has rights to access the MDT Share - added to bootstrap.ini to allow auto logon for Windows PE
-       [string]$AdminPassword - Password for the above account in cleartext
+       [string]$InstallUserID - Name of an account that has rights to access the MDT Share - added to bootstrap.ini to allow auto logon for Windows PE.
+                                If account does not exist on the local machine, it will be created.
+       [string]$InstallPassword - Password for the above account in cleartext
     .OUTPUTS
        Nil Output
     .NOTES
@@ -360,11 +361,13 @@ function Install-MDT {
            [Parameter(Mandatory)]
            [string]$DeploymentShare,
 
-           [Parameter(Mandatory)]
-           [string]$AdminUserID,
+           [Parameter(Mandatory, HelpMessage="Install Account Name cannot be blank")]
+           [ValidateNotNullOrEmpty()]
+           [string]$InstallUserID,
    
-           [Parameter(Mandatory)]
-           [string]$AdminPassword
+           [Parameter(Mandatory, HelpMessage="Install Account Password cannot be blank")]
+           [ValidateNotNullOrEmpty()]
+           [string]$InstallPassword
        )
    
        $MDTDownloadLocation = 'https://download.microsoft.com/download/3/3/9/339BE62D-B4B8-4956-B58D-73C4685FC492/MicrosoftDeploymentToolkit_x64.msi'
@@ -421,18 +424,23 @@ function Install-MDT {
                $Share,
 
                [Parameter(Mandatory)]
-               [string]$AdminUserID,
+               [string]$InstallUserID,
    
                [Parameter(Mandatory)]
-               [string]$AdminPassword
+               [string]$InstallPassword
    
            )
+
+           if (!(Get-LocalUser -Name $InstallUserID -ErrorAction SilentlyContinue)) {
+                #Account doesnt exist on the machine, create it.    
+                New-LocalUser -Name $InstallUserID -Password ($InstallPassword | ConvertTo-SecureString -AsPlainText -Force) -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
+           }   
    
            #Create Folder for Deployment Share
            if (!(Get-Item -Path $Folder -ErrorAction SilentlyContinue)) {
                New-Item -Path $Folder -Type Directory | Out-Null
            }
-   
+
            #Create MDT Deployment Share
            if (!(Get-SmbShare -Name $Share -ErrorAction SilentlyContinue)) {
                New-SmbShare –Name $Share –Path $Folder –ChangeAccess EVERYONE | Out-Null
@@ -458,8 +466,8 @@ function Install-MDT {
            $File = Get-Content -Path "$Folder\Control\BootStrap.ini"
            $File += "DeployRoot=\\$ENV:COMPUTERNAME\$Share"
            $File += $("UserDomain=$ENV:COMPUTERNAME")
-           $File += $("UserID=$AdminUserID")
-           $File += $("UserPassword=$AdminPassword")
+           $File += $("UserID=$InstallUserID")
+           $File += $("UserPassword=$InstallPassword")
            $File += "SkipBDDWelcome=YES"
            $File | Out-File -Encoding ascii -FilePath "$Folder\Control\BootStrap.ini"           
            
@@ -480,7 +488,7 @@ function Install-MDT {
    
            Start-Sleep -Seconds 10
            
-       }  -ArgumentList $DeploymentFolder, $DeploymentShare, $AdminUserID, $AdminPassword -PassThru
+       }  -ArgumentList $DeploymentFolder, $DeploymentShare, $InstallUserID, $InstallPassword -PassThru
 
 }
 
@@ -508,12 +516,13 @@ Add-LabMachineDefinition -Name MDTServer -DiskName MDTData -Memory 4GB -Processo
 Install-Lab
 
 #Installs MDT and performs majority of configuration
-Install-MDT -ComputerName 'MDTServer' -DeploymentFolder $DeploymentFolderLocation -DeploymentShare 'DeploymentShare$' -AdminUserID 'Administrator' -AdminPassword 'Somepass1'
+Install-MDT -ComputerName 'MDTServer' -DeploymentFolder $DeploymentFolderLocation -DeploymentShare 'DeploymentShare$' -InstallUserID 'svcInstaller' -InstallPassword 'Pass@word1'
 #At this stage, MDT and WDS are installed and configured, however there are NO Operating Systems or applications available, plus DHCP still needs to be installed and configured
 
 #Import applications into MDT (optional step). The example below uses an XML file containg the app information
 Import-MDTApplications -XMLFilePath $(Join-Path -Path $ScriptDir -ChildPath 'MDTApplications.XML') -ComputerName 'MDTServer' -DeploymentFolder $DeploymentFolderLocation
 
+#EXAMPLES:
 #Standard Import from ISO
 #Import-MDTOS -ComputerName 'MDTServer' -ISOPath 'C:\LabSources\ISOs\SW_DVD5_WIN_ENT_10_1511_64BIT_English_MLF_X20-82288.ISO' -ISOFriendlyName 'Windows 10 1511' -DeploymentFolder $DeploymentFolderLocation
 
