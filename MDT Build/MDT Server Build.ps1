@@ -1,10 +1,12 @@
 ﻿
 <#
     Author: Glenn Corbett @glennjc (GitHub)
-    Version: 1.1, 19/12/2017
+    Version: 1.2, 12/01/2018
     Revision History (yyyy-mm-dd)
     1.0 - 2017-12-12 Initial Release
     1.1 - 2017-12-19 Optimised code for mounting ISO files and retrieving mounted driver letter, fix provied by @randree
+    1.2 - 2018-01-12 Changed parameters on Instal-MDT to better reflect installation account ID rather than Admin account ID
+                     Added code to check if installation account ID exists on local machine, if not create it using passed in account name and password (Issue #7)
 #>
 
 function Install-MDTDHCP ($ComputerName, $DHCPScopeName, $DHCPScopeStart, $DHCPScopeEnd, $DHCPScopeMask, $DHCPScopeDescription) {
@@ -433,7 +435,8 @@ function Install-MDT {
 
            if (!(Get-LocalUser -Name $InstallUserID -ErrorAction SilentlyContinue)) {
                 #Account doesnt exist on the machine, create it.    
-                New-LocalUser -Name $InstallUserID -Password ($InstallPassword | ConvertTo-SecureString -AsPlainText -Force) -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
+                New-LocalUser -Name $InstallUserID -Password ($InstallPassword | ConvertTo-SecureString -AsPlainText -Force) -Description 'Deployment Account' -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
+                Add-LocalGroupMember -Group 'Users' -Member $InstallUserID
            }   
    
            #Create Folder for Deployment Share
