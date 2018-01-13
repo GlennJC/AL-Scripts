@@ -27,7 +27,7 @@ $CARole += Get-LabMachineRoleDefinition -Role CaRoot @{
 
 Add-LabMachineDefinition -Name DC1 -Memory 2GB -Roles $DCRole,$CARole -IPAddress '10.0.0.1' -Network 'CORPNET'
 Add-LabMachineDefinition -Name APP1 -Memory 2GB -IPAddress '10.0.0.3' -Network 'CORPNET'
-Add-LabMachineDefinition -Name CLIENT1 -Memory 2GB -OperatingSystem 'Windows 7 ULTIMATE' -Network 'CORPNET'
+Add-LabMachineDefinition -Name CLIENT1 -Memory 2GB -OperatingSystem 'Windows 7 PROFESSIONAL' -Network 'CORPNET'
 
 Install-Lab -NetworkSwitches -BaseImages -VMs
 
@@ -57,7 +57,7 @@ Invoke-LabCommand -ActivityName 'Create a user account in Active Directory' -Com
     New-ADUser -Name 'User1' -SamAccountName 'User1' -UserPrincipalName 'User1@corp.contoso.com' -AccountPassword (ConvertTo-SecureString -AsPlainText 'Somepass1' -Force) -ChangePasswordAtLogon $false -PasswordNeverExpires $true -Enabled $true
     Add-ADGroupMember  'Domain Admins' -Members 'User1'
 }
-
+ 
 #Configure computer certificate auto-enrollment
 Enable-LabCertificateAutoenrollment -Computer
 
@@ -84,7 +84,7 @@ Invoke-LabCommand -ActivityName 'Create a web-based CRL distribution point' -Com
 
 #Configure the HTTPS security binding
 #Request a certificate for the web server
-$cert = Request-LabCertificate -Subject CN=app1.corp.contoso.com -TemplateName WebServer -ComputerName 'APP1' -PassThru
+$cert = Request-LabCertificate -Subject CN=app1.corp.contoso.com -TemplateName WebServer -ComputerName 'DC1' -PassThru
 
 Invoke-LabCommand -ActivityName 'Configure the HTTPS security binding' -ComputerName 'APP1' -ScriptBlock {
     #Enable SSL
@@ -127,5 +127,5 @@ Invoke-LabCommand -ActivityName 'Create a shared folder on APP1' -ComputerName '
 }
 
 #Verify the computer certificate
-$cert = Request-LabCertificate -Subject CN=client1.corp.contoso.com -TemplateName Machine -ComputerName 'CLIENT1' -PassThru
+$cert = Request-LabCertificate -Subject 'CN=client1.corp.contoso.com' -TemplateName Machine -ComputerName 'CLIENT1' -PassThru
 
