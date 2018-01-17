@@ -101,11 +101,11 @@ $PSDefaultParameterValues = @{
 
 Add-LabMachineDefinition -Name CTX-DC01 -Memory 2GB -Roles RootDC -IPAddress '192.168.70.10'
 #Citrix Server - Will hold all Citrix Roles
-Add-LabMachineDefinition -Name CTX-AP01 -Memory 4GB -Roles SQLServer2014 -IPAddress '192.168.70.20' 
+Add-LabMachineDefinition -Name CTX-AP01 -Memory 6GB -Roles SQLServer2014 -IPAddress '192.168.70.20' 
 #XenApp Server, will run user applications
-# Add-LabMachineDefinition -Name CTX-XA01 -Memory 4GB -IPAddress '192.168.70.21' 
+Add-LabMachineDefinition -Name CTX-XA01 -Memory 4GB -IPAddress '192.168.70.21' 
 # #XenDesktop Static Workstation
-# Add-LabMachineDefinition -Name CTX-XD01 -Memory 4GB -IPAddress '192.168.70.30' -OperatingSystem 'Windows 10 Enterprise'
+Add-LabMachineDefinition -Name CTX-XD01 -Memory 4GB -IPAddress '192.168.70.30' -OperatingSystem 'Windows 10 Enterprise'
 
 #Do the AL Installation goodness
 Install-Lab
@@ -144,31 +144,47 @@ Install-Application -ComputerName $CitrixHost -NoCopy -DirectoryPath "$($disk.Dr
 Restart-LabVM -ComputerName 'CTX-AP01' -Wait
 
 
+Dismount-LabIsoImage -ComputerName $CitrixHost
 
 #The the necessary apps installed on the machines
-
-# $InstallHosts = @()
-# $InstallHosts += (Get-LabMachine -ComputerName 'CTX-XA01')
+$InstallHosts = @()
+$InstallHosts += (Get-LabMachine -ComputerName 'CTX-XA01')
 # $InstallHosts += (Get-LabMachine -ComputerName 'CTX-XD01')
 
 # #Install Office VL Edition on both the XA and XD machines
-# Install-Application -ComputerName $InstallHosts -URL 'https://ftp.mozilla.org/pub/firefox/releases/57.0/win64/en-US/Firefox%20Setup%2057.0.exe' -InstallArguments '-ms'
-# Install-Application -ComputerName $InstallHosts -DirectoryPath "$labSources\SoftwarePackages\Microsoft Office Pro Plus 2016" -InstallExecutable "Microsoft Office Pro Plus 2016\Setup.exe" -InstallArguments "/adminfile Office_R2.MSP"
+Install-Application -ComputerName $InstallHosts -URL 'https://ftp.mozilla.org/pub/firefox/releases/57.0/win64/en-US/Firefox%20Setup%2057.0.exe' -InstallArguments '-ms'
+Install-Application -ComputerName $InstallHosts -DirectoryPath "$labSources\SoftwarePackages\Microsoft Office Pro Plus 2016" -InstallExecutable "Microsoft Office Pro Plus 2016\Setup.exe" -InstallArguments "/adminfile Office_R2.MSP"
 
 # #Install the compontents required on the XenApp host
-# Install-LabWindowsFeature -ComputerName 'CTX-XA01' -FeatureName 'Remote-Desktop-Services,RDS-RD-Server,NET-Framework-45-Core,Remote-Assistance'
-# Restart-LabVM -ComputerName 'CTX-XA01' -Wait
+Install-LabWindowsFeature -ComputerName 'CTX-XA01' -FeatureName 'Remote-Desktop-Services,RDS-RD-Server,NET-Framework-45-Core,Remote-Assistance,Server-Media-Foundation,FileAndStorage-Services,Storage-Services'
+Restart-LabVM -ComputerName 'CTX-XA01' -Wait
 
 #Install the Visual C++ Runtimes
-# Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2013 Redistributable (x86)" -InstallExecutable "Microsoft Visual C++ 2013 Redistributable (x86)\vcredist_x86.exe" -InstallArguments "/Q"
-# Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2013 Redistributable (x64)" -InstallExecutable "Microsoft Visual C++ 2013 Redistributable (x64)\vcredist_x64.exe" -InstallArguments "/Q"
-# Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2015 Redistributable (x64)" -InstallExecutable "Microsoft Visual C++ 2015 Redistributable (x64)\vc_redist.x64.exe" -InstallArguments "/Q"
-# Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2015 Redistributable (x86)" -InstallExecutable "Microsoft Visual C++ 2015 Redistributable (x86)\vc_redist.x86.exe" -InstallArguments "/Q"
-# Restart-LabVM -ComputerName 'CTX-XA01' -Wait
+Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2013 Redistributable (x86)" -InstallExecutable "Microsoft Visual C++ 2013 Redistributable (x86)\vcredist_x86.exe" -InstallArguments "/Q"
+Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2013 Redistributable (x64)" -InstallExecutable "Microsoft Visual C++ 2013 Redistributable (x64)\vcredist_x64.exe" -InstallArguments "/Q"
+Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2015 Redistributable (x64)" -InstallExecutable "Microsoft Visual C++ 2015 Redistributable (x64)\vc_redist.x64.exe" -InstallArguments "/Q"
+Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -DirectoryPath "$labSources\SoftwarePackages\Frameworks\Microsoft Visual C++ 2015 Redistributable (x86)" -InstallExecutable "Microsoft Visual C++ 2015 Redistributable (x86)\vc_redist.x86.exe" -InstallArguments "/Q"
+Restart-LabVM -ComputerName 'CTX-XA01' -Wait
 
-# $disk = Mount-LabIsoImage -ComputerName 'CTX-XA01' -ISOPath (Get-LabIsoImageDefinition | Where-Object { $_.Name -eq 'XenDesktop7.15'}).Path -PassThru -SupressOutput
-# $job=Install-LabSoftwarePackage -ComputerName 'CTX-XA01'-LocalPath "$($disk.DriveLetter)\x64\XenDesktop Setup\XenDesktopVDASetup.exe" -CommandLine '/quiet /noreboot /components vda,plugins /controllers ""CTX-AP01.citrixlab.local"" /enable_hdx_ports /enable_remote_assistance' -AsJob -PassThru -ErrorAction Stop
-# $result = Wait-LWLabJob -Job $job -NoNewLine -ProgressIndicator 10 -PassThru -ErrorAction Stop
+Invoke-LabCommand -ActivityName 'Create SQL Databases' -ComputerName $CitrixHost -ScriptBlock {
+    New-XDDatabase -AllDefaultDatabases -DatabaseServer 'CTX-AP01' -SiteName Default
+}
+
+Invoke-LabCommand -ActivityName 'Create XenDesktop Site' -ComputerName $CitrixHost -ScriptBlock {
+    New-XDSite -AllDefaultDatabases -DatabaseServer 'CTX-AP01' -SiteName Default
+}
+
+Invoke-LabCommand -ActivityName 'Configure Licensing Server' -ComputerName $CitrixHost -ScriptBlock {
+    Set-XDLicensing -LicenseServerAddress 'CTX-AP01' -LicenseServerPort 27000
+}
+
+$disk = Mount-LabIsoImage -ComputerName 'CTX-XA01' -ISOPath (Get-LabIsoImageDefinition | Where-Object { $_.Name -eq 'XenDesktop7.15'}).Path -PassThru -SupressOutput
+Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -NoCopy -DirectoryPath "$($disk.DriveLetter)\x64\XenDesktop Setup" -InstallExecutable "XenDesktopVDASetup.exe" -InstallArguments '/quiet /noreboot /components vda,plugins /controllers "CTX-AP01.citrixlab.local" /enable_hdx_ports /enable_remote_assistance'
+#Installation is not completed at this point, server requires a reboot and re-execution of the install to complete.  Need to pull install apart a bit more to remove this "unmanaged" restart requirement.
+Restart-LabVM -ComputerName 'CTX-XA01' -Wait
+Install-Application -ComputerName (Get-LabMachine -ComputerName 'CTX-XA01') -NoCopy -DirectoryPath "$($disk.DriveLetter)\x64\XenDesktop Setup" -InstallExecutable "XenDesktopVDASetup.exe" -InstallArguments '/quiet /noreboot /components vda,plugins /controllers "CTX-AP01.citrixlab.local" /enable_hdx_ports /enable_remote_assistance'
+
+
 
 # $disk = Mount-LabIsoImage -ComputerName 'CTX-XD01' -ISOPath (Get-LabIsoImageDefinition | Where-Object { $_.Name -eq 'XenDesktop7.15'}).Path -PassThru -SupressOutput
 # $job=Install-LabSoftwarePackage -ComputerName 'CTX-XD01'-LocalPath "$($disk.DriveLetter)\x64\XenDesktop Setup\XenDesktopVDASetup.exe" -CommandLine '/quiet /noreboot /components vda,plugins /controllers ""CTX-AP01.citrixlab.local"" /enable_hdx_ports /enable_remote_assistance /remotepc' -AsJob -PassThru -ErrorAction Stop
