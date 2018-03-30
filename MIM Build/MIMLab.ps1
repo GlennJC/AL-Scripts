@@ -199,6 +199,7 @@ function Get-LabMachinePendingReboot {
 }
 
 function Install-Application {
+    #Modified version of the AutomatedLab Install-LabSoftwarePackage to support additional funcitonality including the ability to support restarts after app ionstall
 
     param (
        
