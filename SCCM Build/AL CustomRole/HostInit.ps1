@@ -3,6 +3,12 @@ param(
     [Parameter(Mandatory)]
     [string]$ComputerName,
     
+    [string]$SCCMSiteCode = "CM1",
+
+    [string]$SCCMBinariesDirectory = "$labSources\SoftwarePackages\SCCM1702",
+
+    [string]$SCCMPreReqsDirectory = "$labSources\SoftwarePackages\SCCMPreReqs",
+
     [string]$AdkDownloadPath = "$labSources\SoftwarePackages\ADK"
 )
 
