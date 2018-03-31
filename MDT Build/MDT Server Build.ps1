@@ -19,7 +19,8 @@ function Install-MDTDHCP ($ComputerName, $DHCPScopeName, $DHCPScopeStart, $DHCPS
         1. Installs DHCP Service
         2. Adds the defined DHCP Server Scope
         3. Configured WDS to not listen on DHCP ports, and configure Option 60 in DHCP
-        4. Binds the default Ethernet IPv4 interface to allow DHCP to listen.
+        4. Binds all interfaces to support DHCP
+        5. If machine is a domain member, authorise DHCP Server in AD.
 
     .EXAMPLE
         Install-MDTDHCP -ComputerName 'MDTServer' -DHCPScopeName 'Default Scope for DHCP' -DHCPscopeDescription 'Default Scope' -DHCPScopeStart 192.168.50.100 -DHCPScopeEnd 192.168.50.110 -DHCPScopeMask 255.255.255.0
@@ -34,17 +35,15 @@ function Install-MDTDHCP ($ComputerName, $DHCPScopeName, $DHCPScopeStart, $DHCPS
         Nil
     .NOTES
         Feature Enhancement: Function assumes DHCP and WDS are on the same server, does not take into account split roles.
-        Feature Enhancement: Deal with the requirement for DHCP servers to be authorised in AD environments
         Feature Enhancement: Validate DHCP Scope settings are valid for the AL networking configuration
         Feature Enhancement: Allow additonal DHCP scope options (such as DNS, Gateway etc)
-        Feature Enhancement: Allow DHCP to bind to all / some available interfaces, currently assumes 'Ethernet'
     #>
 
     Invoke-LabCommand -ActivityName 'Installing and Configuring DHCP' -ComputerName $ComputerName -ScriptBlock {
         param  
         (
             [string]$DHCPScopeName = 'Default Scope',
-            [string]$DHCPScopeDescription = 'Default Scope for WDS',
+            [string]$DHCPScopeDescription = 'Default Scope for DHCP',
 
             [Parameter(Mandatory)]
             [string]$DHCPScopeStart,
@@ -65,7 +64,14 @@ function Install-MDTDHCP ($ComputerName, $DHCPScopeName, $DHCPScopeStart, $DHCPS
         Start-Process -FilePath "C:\Windows\System32\WDSUtil.exe" -ArgumentList "/Set-Server /DHCPOption60:Yes" -Wait
         Start-Sleep -Seconds 10
         #Bind the Ethernet Adapter so that it can process DHCP Requests
-        Set-DhcpServerv4Binding -BindingState $True -InterfaceAlias "Ethernet" | Out-Null
+        #Fixed to bind to all adapters, irrespective of name
+        Get-NetAdapter | Set-DhcpServerv4Binding -BindingState $True | Out-Null
+
+        #DHCP Authorisation in AD - Partial fix to Issue 3.
+        If ((Get-WmiObject -Class Win32_ComputerSystem).PartOfDomain) {
+            #Machine is a domain member, needs to be authorised in AD
+            Add-DHCPServerinDC
+        }
                
     } -ArgumentList $DHCPScopeName, $DHCPScopeDescription, $DHCPScopeStart, $DHCPScopeEnd, $DHCPScopeMask -PassThru
 }
