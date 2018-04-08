@@ -54,12 +54,12 @@ function Install-SCCM {
     }
 
     if (!(Test-Path -Path $SCCMBinariesDirectory)) {
-        Write-LogFunctionExitWithError -Message "SCCM Installation files not located at '$(Join-Path -Path $downloadTargetFolder -ChildPath $SCCMBinariesDirectory)'"
+        Write-LogFunctionExitWithError -Message "SCCM Installation files not located at '$($SCCMBinariesDirectory)'"
         return
     }
 
     if (!(Test-Path -Path $SCCMPreReqsDirectory)) {
-        Write-LogFunctionExitWithError -Message "SCCM PreRequisite files not located at '$(Join-Path -Path $downloadTargetFolder -ChildPath $SCCMPreReqsDirectory)'"
+        Write-LogFunctionExitWithError -Message "SCCM PreRequisite files not located at '$($SCCMPreReqsDirectory)'"
         return
     }
 
@@ -73,9 +73,9 @@ function Install-SCCM {
     
     #Copy the SCCM Binaries
     $downloadTargetFolder = Join-Path -Path $labSources -ChildPath SoftwarePackages
-    Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $SCCMBinariesDirectory) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
+    Copy-LabFileItem -Path $SCCMBinariesDirectory -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
     #Copy the SCCM Prereqs (must have been previously downloaded)
-    Copy-LabFileItem -Path (Join-Path -Path $downloadTargetFolder -ChildPath $SCCMPreReqsDirectory) -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
+    Copy-LabFileItem -Path $SCCMPreReqsDirectory -DestinationFolderPath C:\Install -ComputerName $SCCMServerName -Recurse
 
     #Extend the AD Schema
     Invoke-LabCommand -ActivityName 'Extend AD Schema' -ComputerName $SCCMServerName -ScriptBlock {
