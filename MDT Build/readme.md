@@ -53,9 +53,11 @@ Add-LabMachineDefinition -Name MDT1Server -Memory 4GB -Processors 2 -DiskName MD
 
 A feature has been added to support direct targeting of Operating Systems using a combination of the OS name and OS version. Within the 'OperatingSystems' parameter, multiple Operating Systems can be provided, with additional supported options being:
 
-'OS Name' - System will search for an AutomatedLab Operating System name and pick the newest one of there are multiples
-'OS Name|OS Version' - System will search for an AutomatedLab Operating System name, with the specific version
-'OS Name|OS Version|Friendly Name' - System will search for an AutomatedLab Operating System name, with the specific version, and use the Friendly Name when registering the OS to MDT.
+`OS Name` - System will search for an AutomatedLab Operating System name and pick the newest one of there are multiples
+
+`OS Name|OS Version` - System will search for an AutomatedLab Operating System name, with the specific version
+
+`OS Name|OS Version|Friendly Name` - System will search for an AutomatedLab Operating System name, with the specific version, and use the Friendly Name when registering the OS to MDT.
 
 Any combination of these options can be used for each item in the OperatingSystems List.
 
