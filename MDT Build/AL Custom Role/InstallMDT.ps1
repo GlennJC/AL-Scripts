@@ -1,6 +1,6 @@
 <#
     Author: Glenn Corbett @glennjc (GitHub)
-    Version: 1.2, 12/01/2018
+    Version: 1.3, 08/Apr/2018
 #>
 
 param(
@@ -603,13 +603,6 @@ function Import-MDTTaskSequences {
 }
 
 Import-Lab -Name $data.Name
-
-#Bring all available disks online (this is to cater for the secondary drive)
-Invoke-LabCommand -ActivityName 'Bring Disks Online' -ComputerName $ComputerName -ScriptBlock {
-    $DataVolume = Get-Disk | Where-Object -Property OperationalStatus -eq Offline
-    $DataVolume | Set-Disk -IsOffline $false
-    $DataVolume | Set-Disk -IsReadOnly $false
-}
 
 #Installs MDT and performs majority of configuration
 Install-MDT -ComputerName $ComputerName -DeploymentFolder $DeploymentFolderLocation -DeploymentShare DeploymentShare$ -InstallUserID $InstallUserID -InstallPassword $InstallPassword
