@@ -157,7 +157,8 @@ function Install-SCCM {
     Copy-LabFileItem -Path "$downloadTargetFolder\ADK" -DestinationFolderPath C:\Install -ComputerName $SccmServerName -Recurse
    
     Write-ScreenInfo "Installing ADK on server '$SccmServerName'..." -NoNewLine
-    $job = Install-LabSoftwarePackage -LocalPath C:\Install\ADK\adksetup.exe -CommandLine "/norestart /q /ceip off /features OptionId.WindowsPreinstallationEnvironment OptionId.DeploymentTools OptionId.UserStateMigrationTool OptionId.ImagingAndConfigurationDesigner" `    -ComputerName $SccmServerName -NoDisplay -AsJob -PassThru
+    $job = Install-LabSoftwarePackage -LocalPath C:\Install\ADK\adksetup.exe -CommandLine "/norestart /q /ceip off /features OptionId.WindowsPreinstallationEnvironment OptionId.DeploymentTools OptionId.UserStateMigrationTool OptionId.ImagingAndConfigurationDesigner" `
+    -ComputerName $SccmServerName -NoDisplay -AsJob -PassThru
     Wait-LWLabJob -Job $job -NoDisplay
 
     Write-ScreenInfo "Installing .net 3.5 on '$SccmServerName'..." -NoNewLine
@@ -234,10 +235,9 @@ UseProxy=0
 "@
 
     #Save the config file to disk, and copy it to the SCCM Server
-    $sccmInIFileLocation = "$labSources\PostInstallationActivities"
-    $setupConfigFileContent | Out-File -FilePath "$sccmInIFileLocation\ConfigMgrUnattend.ini" -Encoding ascii
+    $setupConfigFileContent | Out-File -FilePath "$($lab.LabPath)\ConfigMgrUnattend.ini" -Encoding ascii
 
-    Copy-LabFileItem -Path "$sccmInIFileLocation\ConfigMgrUnattend.ini" -DestinationFolderPath C:\Install -ComputerName $SccmServerName
+    Copy-LabFileItem -Path "$($lab.LabPath)\ConfigMgrUnattend.ini" -DestinationFolderPath C:\Install -ComputerName $SccmServerName
     
     Invoke-LabCommand -ActivityName 'Create Folders for SQL DB' -ComputerName $sqlServer -ScriptBlock {
         #SQL Server does not like creating databases without the directories already existing, so make sure to create them first
@@ -255,6 +255,6 @@ UseProxy=0
 }
 
 
-Import-Lab -Name $data.Name -NoValidation -NoDisplay
+$lab = Import-Lab -Name $data.Name -NoValidation -NoDisplay -PassThru
 
 Install-SCCM -SccmServerName $ComputerName -SccmBinariesDirectory $SCCMBinariesDirectory -SccmPreReqsDirectory $SCCMPreReqsDirectory -SccmSiteCode $SCCMSiteCode -SqlServerName $SqlServerName
