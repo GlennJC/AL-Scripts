@@ -3,13 +3,20 @@ param(
     [Parameter(Mandatory)]
     [string]$ComputerName,
     
-    [string]$SCCMSiteCode = "CM1",
+    [Parameter(Mandatory)]
+    [string]$SccmSiteCode,
 
-    [string]$SCCMBinariesDirectory = "$labSources\SoftwarePackages\SCCM1702",
+    [Parameter(Mandatory)]
+    [string]$SccmBinariesDirectory,
 
-    [string]$SCCMPreReqsDirectory = "$labSources\SoftwarePackages\SCCMPreReqs",
+    [Parameter(Mandatory)]
+    [string]$SccmPreReqsDirectory,
 
-    [string]$AdkDownloadPath = "$labSources\SoftwarePackages\ADK"
+    [Parameter(Mandatory)]
+    [string]$AdkDownloadPath,
+
+    [Parameter(Mandatory)]
+    [string]$SqlServerName
 )
 
 $script = Get-Command -Name $PSScriptRoot\DownloadAdk.ps1 
@@ -17,5 +24,6 @@ $param = Sync-Parameter -Command $script -Parameters $PSBoundParameters
 & $PSScriptRoot\DownloadAdk.ps1 @param 
 
 $script = Get-Command -Name $PSScriptRoot\InstallSCCM.ps1
+$x = $PSBoundParameters
 $param = Sync-Parameter -Command $script -Parameters $PSBoundParameters 
 & $PSScriptRoot\InstallSCCM.ps1 @param 
