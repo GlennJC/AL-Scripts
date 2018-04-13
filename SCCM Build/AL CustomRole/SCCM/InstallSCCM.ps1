@@ -249,7 +249,7 @@ UseProxy=0
     } -NoDisplay
     
     Write-ScreenInfo 'Install SCCM. This step will take quite some time...' -NoNewLine
-    $job = Invoke-LabSoftwarePackage -ComputerName $SccmServerName -LocalPath C:\Install\SCCM1702\SMSSETUP\BIN\X64\setup.exe -CommandLine '/Script "C:\Install\ConfigMgrUnattend.ini" /NoUserInput' -AsJob -PassThru
+    $job = Install-LabSoftwarePackage -ComputerName $SccmServerName -LocalPath C:\Install\SCCM1702\SMSSETUP\BIN\X64\setup.exe -CommandLine '/Script "C:\Install\ConfigMgrUnattend.ini" /NoUserInput' -AsJob -PassThru
     Wait-LWLabJob -Job $job
 }
 
