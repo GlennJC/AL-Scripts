@@ -19,10 +19,14 @@ param(
     [string]$SqlServerName
 )
 
-$script = Get-Command -Name $PSScriptRoot\DownloadAdk.ps1 
-$param = Sync-Parameter -Command $script -Parameters $PSBoundParameters 
-& $PSScriptRoot\DownloadAdk.ps1 @param 
+$script = Get-Command -Name $PSScriptRoot\DownloadAdk.ps1
+$param = Sync-Parameter -Command $script -Parameters $PSBoundParameters
+& $PSScriptRoot\DownloadAdk.ps1 @param
+
+$script = Get-Command -Name $PSScriptRoot\DownloadSccm.ps1
+$param = Sync-Parameter -Command $script -Parameters $PSBoundParameters
+& $PSScriptRoot\DownloadSccm.ps1 @param
 
 $script = Get-Command -Name $PSScriptRoot\InstallSCCM.ps1
-$param = Sync-Parameter -Command $script -Parameters $PSBoundParameters 
-& $PSScriptRoot\InstallSCCM.ps1 @param 
+$param = Sync-Parameter -Command $script -Parameters $PSBoundParameters
+& $PSScriptRoot\InstallSCCM.ps1 @param
