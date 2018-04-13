@@ -247,14 +247,13 @@ UseProxy=0
         #TODO: Add-LocalGroupMember -Group Administrators -Member contoso\sccm1$
         Add-LocalGroupMember -Group Administrators -Member contoso\sccm1$
     } -NoDisplay
-
-    Invoke-LabCommand -ActivityName 'Install SCCM' -ComputerName $SccmServerName -ScriptBlock {
-        #Install SCCM. This step will take quite some time.
-        C:\Install\SCCM1702\SMSSETUP\BIN\X64\setup.exe /Script "C:\Install\ConfigMgrUnattend.ini" /NoUserInput
-    }
+    
+    Write-ScreenInfo 'Install SCCM. This step will take quite some time...' -NoNewLine
+    $job = Invoke-LabSoftwarePackage -ComputerName $SccmServerName -LocalPath C:\Install\SCCM1702\SMSSETUP\BIN\X64\setup.exe -CommandLine '/Script "C:\Install\ConfigMgrUnattend.ini" /NoUserInput' -AsJob -PassThru
+    Wait-LWLabJob -Job $job
 }
 
-
+Write-ScreenInfo ''
 $lab = Import-Lab -Name $data.Name -NoValidation -NoDisplay -PassThru
 
 Install-SCCM -SccmServerName $ComputerName -SccmBinariesDirectory $SCCMBinariesDirectory -SccmPreReqsDirectory $SCCMPreReqsDirectory -SccmSiteCode $SCCMSiteCode -SqlServerName $SqlServerName
