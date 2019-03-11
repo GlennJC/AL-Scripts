@@ -30,6 +30,7 @@ Known Restrictions/Limitations:
     ```
 
 - All SCCM Generated certificates are self-signed, solution does not currently integrate with Certificate Services
+- Note that the Breakdown of activities for SCCM configuration may not be ideal and does result in additional execution time to reload powershell modules / reconnect to SCCM site servers, however this is deliberate to allow specific functions to be disabled so manual configuration can be done as part of training / documentation development activities.
 
 This script is a work in progress, there are some assumptions made resulting in some lack of error checking. Additional enhancements are in the pipeline, and are managed as enhancement requests within GitHub
 
