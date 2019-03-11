@@ -1,0 +1,257 @@
+{
+    "SCCMInstallProps":  {
+                             "SccmBinariesDirectory":  "C:\\LabSources\\SoftwarePackages\\SCCM1802",
+                             "SccmInstallDirectory":  "D:\\Program Files\\Microsoft Configuration Manager",
+                             "AdkDownloadPath":  "C:\\LabSources\\SoftwarePackages\\ADK1809",
+                             "SccmSiteCode":  "S01",
+                             "SccmSiteName":  "Primary Site",
+                             "SccmPreReqsDirectory":  "C:\\LabSources\\SoftwarePackages\\SCCMPreReqs1802",
+                             "AdkWinPEDownloadPath":  "C:\\LabSources\\SoftwarePackages\\ADK1809WinPEAddons",
+                             "SqlServerName":  "SCCMLAB1-DB1"
+                         },
+    "LabProps":  {
+                     "ReferenceDiskSize":  80,
+                     "LabName":  "SCCMLAB1",
+                     "VMPath":  "D:\\AutomatedLab-VMs",
+                     "ServerOS":  "Windows Server 2016 SERVERDATACENTER"
+                 },
+    "NetworkProps":  {
+                         "Netmask":  "24",
+                         "DHCPScopeOptions":  {
+                                                  "ScopeId":  "192.168.50.100",
+                                                  "DNSDomain":  "labtest.local",
+                                                  "Router":  "192.168.50.252",
+                                                  "DnsServer":  "192.168.50.10"
+                                              },
+                         "DNSServers":  "192.168.50.10",
+                         "DHCPScope":  {
+                                           "EndRange":  "192.168.50.150",
+                                           "Name":  "Default Scope",
+                                           "Description":  "Default Scope for Clients",
+                                           "LeaseDuration":  "0.08:00:00",
+                                           "SubnetMask":  "255.255.255.0",
+                                           "StartRange":  "192.168.50.100"
+                                       },
+                         "DNSServerFowarder":  "192.168.10.254",
+                         "DefaultGW":  "192.168.50.252",
+                         "AddressSpace":  "192.168.50.0"
+                     },
+    "SccmConfigProps":  {
+                            "BoundaryGroups":  [
+                                                   {
+                                                       "SiteCode":  "S01",
+                                                       "Name":  "Default Boundary Group"
+                                                   }
+                                               ],
+                            "DiscoveryMethods":  {
+                                                     "ActiveDirectoryGroupDiscovery":  {
+                                                                                           "Scope":  {
+                                                                                                         "SiteCode":  "S01",
+                                                                                                         "Name":  "AD Group Discovery",
+                                                                                                         "LdapLocation":  "LDAP://DC=LABTEST,DC=LOCAL",
+                                                                                                         "RecursiveSearch":  true
+                                                                                                     },
+                                                                                           "Schedule":  {
+                                                                                                            "RecurCount":  1,
+                                                                                                            "RecurInterval":  "Days",
+                                                                                                            "Start":  "01/01/2001"
+                                                                                                        },
+                                                                                           "Settings":  {
+                                                                                                            "EnableDeltaDiscovery":  true,
+                                                                                                            "DiscoverDistributionGroupMembership":  true,
+                                                                                                            "SiteCode":  "S01",
+                                                                                                            "DeltaDiscoveryMins":  30,
+                                                                                                            "Enabled":  true
+                                                                                                        }
+                                                                                       },
+                                                     "ActiveDirectoryUserDiscovery":  {
+                                                                                          "Settings":  {
+                                                                                                           "ActiveDirectoryContainer":  "LDAP://DC=LABTEST,DC=LOCAL",
+                                                                                                           "Recursive":  true,
+                                                                                                           "DeltaDiscoveryMins":  30,
+                                                                                                           "EnableDeltaDiscovery":  true,
+                                                                                                           "SiteCode":  "S01",
+                                                                                                           "Enabled":  true
+                                                                                                       },
+                                                                                          "Schedule":  {
+                                                                                                           "RecurCount":  1,
+                                                                                                           "RecurInterval":  "Days",
+                                                                                                           "Start":  "01/01/2001"
+                                                                                                       }
+                                                                                      },
+                                                     "HeartbeatDiscovery":  {
+                                                                                "Settings":  {
+                                                                                                 "SiteCode":  "S01",
+                                                                                                 "Enabled":  true
+                                                                                             },
+                                                                                "Schedule":  {
+                                                                                                 "RecurCount":  7,
+                                                                                                 "RecurInterval":  "Days"
+                                                                                             }
+                                                                            },
+                                                     "ActiveDirectorySystemDiscovery":  {
+                                                                                            "Settings":  {
+                                                                                                             "ActiveDirectoryContainer":  "LDAP://DC=LABTEST,DC=LOCAL",
+                                                                                                             "Recursive":  true,
+                                                                                                             "DeltaDiscoveryMins":  30,
+                                                                                                             "EnableDeltaDiscovery":  true,
+                                                                                                             "SiteCode":  "S01",
+                                                                                                             "Enabled":  true
+                                                                                                         },
+                                                                                            "Schedule":  {
+                                                                                                             "RecurCount":  1,
+                                                                                                             "RecurInterval":  "Days",
+                                                                                                             "Start":  "01/01/2001"
+                                                                                                         }
+                                                                                        }
+                                                 },
+                            "WSUSProps":  {
+                                              "ContentDirectory":  "F:\\WSUS",
+                                              "DisabledProducts":  [
+                                                                       "Windows",
+                                                                       "Office",
+                                                                       "Language Packs"
+                                                                   ],
+                                              "UpdateLanguages":  [
+                                                                      "en"
+                                                                  ],
+                                              "EnabledProducts":  [
+                                                                      "Windows Server 2016",
+                                                                      "Windows 10",
+                                                                      "Office 2016"
+                                                                  ]
+                                          },
+                            "SiteBoundaries":  [
+                                                   {
+                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
+                                                       "IPRange":  "192.168.50.1-192.168.50.254",
+                                                       "Name":  "192.168.50.0 Boundary"
+                                                   },
+                                                   {
+                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
+                                                       "IPRange":  "192.168.51.1-192.168.51.254",
+                                                       "Name":  "192.168.51.0 Boundary"
+                                                   },
+                                                   {
+                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
+                                                       "IPRange":  "192.168.52.1-192.168.52.254",
+                                                       "Name":  "192.168.52.0 Boundary"
+                                                   }
+                                               ],
+                            "DomainJoinAccountOUs":  [
+                                                         {
+                                                             "OUName":  "OU=Desktops,OU=_Workstations"
+                                                         },
+                                                         {
+                                                             "OUName":  "OU=Staging,OU=_Workstations"
+                                                         },
+                                                         {
+                                                             "OUName":  "CN=Computers"
+                                                         }
+                                                     ],
+                            "ServiceAccounts":  [
+                                                    {
+                                                        "Description":  "SCCM Domain Join Account",
+                                                        "Enabled":  true,
+                                                        "PasswordNeverExpires":  true,
+                                                        "Password":  "Password123",
+                                                        "UserPrincipalName":  "svcDJ",
+                                                        "Role":  "DJ",
+                                                        "Name":  "svcDJ",
+                                                        "Path":  "OU=Service Accounts, OU=_Admin",
+                                                        "SamAccountName":  "svcDJ",
+                                                        "ChangePasswordAtLogon":  false
+                                                    },
+                                                    {
+                                                        "Description":  "SCCM Client Push Account",
+                                                        "Enabled":  true,
+                                                        "PasswordNeverExpires":  true,
+                                                        "Password":  "Password123",
+                                                        "UserPrincipalName":  "svcPush",
+                                                        "Role":  "CP",
+                                                        "Name":  "svcPush",
+                                                        "Path":  "OU=Service Accounts, OU=_Admin",
+                                                        "SamAccountName":  "svcPush",
+                                                        "ChangePasswordAtLogon":  false
+                                                    },
+                                                    {
+                                                        "Description":  "SCCM Network Access Account",
+                                                        "Enabled":  true,
+                                                        "PasswordNeverExpires":  true,
+                                                        "Password":  "Password123",
+                                                        "UserPrincipalName":  "svcNAA",
+                                                        "Role":  "NA",
+                                                        "Name":  "svcNAA",
+                                                        "Path":  "OU=Service Accounts, OU=_Admin",
+                                                        "SamAccountName":  "svcNAA",
+                                                        "ChangePasswordAtLogon":  false
+                                                    }
+                                                ]
+                        },
+    "SwitchProps":  {
+                        "ManagementAdapter":  true,
+                        "vLANid":  "50",
+                        "AdapterName":  "EXT-04",
+                        "vSwitchName":  "SCCMLab",
+                        "SwitchType":  "External"
+                    },
+    "ADProps":  {
+                    "ForestFunctionalLevel":  "Win2012R2",
+                    "OUStructure":  [
+                                        {
+                                            "Name":  "_Admin"
+                                        },
+                                        {
+                                            "Parent":  "OU=_Admin",
+                                            "Description":  "Service Accounts",
+                                            "Name":  "Service Accounts",
+                                            "Protected":  true
+                                        },
+                                        {
+                                            "Parent":  "OU=_Admin",
+                                            "Description":  "Admin User Accounts",
+                                            "Name":  "Privileged Users",
+                                            "Protected":  true
+                                        },
+                                        {
+                                            "Parent":  "OU=_Admin",
+                                            "Description":  "Admin User Accounts",
+                                            "Name":  "Privileged Groups",
+                                            "Protected":  true
+                                        },
+                                        {
+                                            "Name":  "_Workstations"
+                                        },
+                                        {
+                                            "Parent":  "OU=_Workstations",
+                                            "Description":  "Default Desktops",
+                                            "Name":  "Desktops"
+                                        },
+                                        {
+                                            "Parent":  "OU=_Workstations",
+                                            "Description":  "Staging Desktop OU Used During Builds",
+                                            "Name":  "Staging"
+                                        },
+                                        {
+                                            "Name":  "_Standard"
+                                        },
+                                        {
+                                            "Parent":  "OU=_Standard",
+                                            "Description":  "Standard Users",
+                                            "Name":  "User Accounts"
+                                        },
+                                        {
+                                            "Parent":  "OU=_Standard",
+                                            "Description":  "Standard Groups",
+                                            "Name":  "Groups"
+                                        },
+                                        {
+                                            "Parent":  "OU=_Standard",
+                                            "Description":  "Exchange Distribution Lists",
+                                            "Name":  "Distribution Lists"
+                                        }
+                                    ],
+                    "DomainFunctionalLevel":  "Win2012R2",
+                    "DomainName":  "labtest.local"
+                }
+}
