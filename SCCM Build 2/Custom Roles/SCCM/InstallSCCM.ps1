@@ -51,7 +51,7 @@ function Install-SCCM {
         [Parameter(Mandatory)]
         [string]$SccmSiteCode,
         
-        [string]$SccmSiteName,
+        [string]$SccmSiteName="Primary Site 1",
 
         [Parameter(Mandatory)]
         [string]$SqlServerName,
@@ -102,7 +102,14 @@ function Install-SCCM {
         $dataVolume = Get-Disk | Where-Object -Property OperationalStatus -eq Offline
         $dataVolume | Set-Disk -IsOffline $false
         $dataVolume | Set-Disk -IsReadOnly $false
+
+        #Add some NO_SMS_ON_DRIVE.SMS files to stop SCCM grabbing them for its use (note: this activity needs to be parameterised)
+        Set-Content -Path C:\NO_SMS_ON_DRIVE.SMS -Value 'NO_SMS_ON_DRIVE'
+        Set-Content -Path E:\NO_SMS_ON_DRIVE.SMS -Value 'NO_SMS_ON_DRIVE'
+        Set-Content -Path F:\NO_SMS_ON_DRIVE.SMS -Value 'NO_SMS_ON_DRIVE'
     }
+
+    
     
     #Copy the SCCM Binaries
     $SCCMSourcesDirectory = Copy-LabFileItem -Path $SccmBinariesDirectory -DestinationFolderPath C:\Install -ComputerName $SccmServerName -Recurse -PassThru
@@ -219,14 +226,6 @@ function Install-SCCM {
     Write-ScreenInfo "Restarting server '$SccmServerName'..." -NoNewLine
     Restart-LabVM -ComputerName $SccmServerName -Wait -NoDisplay
 
-    if ($SccmSiteName -ne $null) {
-        $SiteName = $SccmSiteName
-    }
-    else
-    {
-        $SiteName = "Primary Site 1"
-    }
-
     #Build the Installation unattended .INI file
     $setupConfigFileContent = @"
 [Identification]
@@ -235,7 +234,7 @@ Action=InstallPrimarySite
 [Options]
 ProductID=EVAL
 SiteCode=$SccmSiteCode
-SiteName=$SiteName
+SiteName=$SccmSiteName
 SMSInstallDir=$SccmInstallDirectory
 SDKServer=$sccmServerFqdn
 RoleCommunicationProtocol=HTTPorHTTPS
@@ -296,4 +295,4 @@ UseProxy=0
 Write-ScreenInfo ''
 $lab = Import-Lab -Name $data.Name -NoValidation -NoDisplay -PassThru
 
-Install-SCCM -SccmServerName $ComputerName -SccmBinariesDirectory $SCCMBinariesDirectory -SccmPreReqsDirectory $SCCMPreReqsDirectory -SccmSiteCode $SCCMSiteCode -SqlServerName $SqlServerName
+Install-SCCM -SccmServerName $ComputerName -SccmBinariesDirectory $SCCMBinariesDirectory -SccmPreReqsDirectory $SCCMPreReqsDirectory -SccmSiteCode $SCCMSiteCode -SqlServerName $SqlServerName -SccmSiteName $SccmSiteName
