@@ -1,4 +1,5 @@
 {
+    "_comment":  "THis is a comment",
     "SCCMInstallProps":  {
                              "SccmBinariesDirectory":  "C:\\LabSources\\SoftwarePackages\\SCCM1802",
                              "SccmInstallDirectory":  "D:\\Program Files\\Microsoft Configuration Manager",
@@ -37,12 +38,6 @@
                          "AddressSpace":  "192.168.50.0"
                      },
     "SccmConfigProps":  {
-                            "BoundaryGroups":  [
-                                                   {
-                                                       "SiteCode":  "S01",
-                                                       "Name":  "Default Boundary Group"
-                                                   }
-                                               ],
                             "DiscoveryMethods":  {
                                                      "ActiveDirectoryGroupDiscovery":  {
                                                                                            "Scope":  {
@@ -105,50 +100,12 @@
                                                                                                          }
                                                                                         }
                                                  },
-                            "WSUSProps":  {
-                                              "ContentDirectory":  "F:\\WSUS",
-                                              "DisabledProducts":  [
-                                                                       "Windows",
-                                                                       "Office",
-                                                                       "Language Packs"
-                                                                   ],
-                                              "UpdateLanguages":  [
-                                                                      "en"
-                                                                  ],
-                                              "EnabledProducts":  [
-                                                                      "Windows Server 2016",
-                                                                      "Windows 10",
-                                                                      "Office 2016"
-                                                                  ]
-                                          },
-                            "SiteBoundaries":  [
+                            "BoundaryGroups":  [
                                                    {
-                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
-                                                       "IPRange":  "192.168.50.1-192.168.50.254",
-                                                       "Name":  "192.168.50.0 Boundary"
-                                                   },
-                                                   {
-                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
-                                                       "IPRange":  "192.168.51.1-192.168.51.254",
-                                                       "Name":  "192.168.51.0 Boundary"
-                                                   },
-                                                   {
-                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
-                                                       "IPRange":  "192.168.52.1-192.168.52.254",
-                                                       "Name":  "192.168.52.0 Boundary"
+                                                       "SiteCode":  "S01",
+                                                       "Name":  "Default Boundary Group"
                                                    }
                                                ],
-                            "DomainJoinAccountOUs":  [
-                                                         {
-                                                             "OUName":  "OU=Desktops,OU=_Workstations"
-                                                         },
-                                                         {
-                                                             "OUName":  "OU=Staging,OU=_Workstations"
-                                                         },
-                                                         {
-                                                             "OUName":  "CN=Computers"
-                                                         }
-                                                     ],
                             "ServiceAccounts":  [
                                                     {
                                                         "Description":  "SCCM Domain Join Account",
@@ -186,7 +143,725 @@
                                                         "SamAccountName":  "svcNAA",
                                                         "ChangePasswordAtLogon":  false
                                                     }
-                                                ]
+                                                ],
+                            "DistributionPointProps":  [
+                                                           {
+                                                               "PXEProps":  {
+                                                                                "EnableUnknownComputerSupport":  true,
+                                                                                "EnablePxe":  true,
+                                                                                "AllowPxeResponse":  true,
+                                                                                "PxeServerResponseDelaySeconds":  0,
+                                                                                "UserDeviceAffinity":  "DoNotUse"
+                                                                            },
+                                                               "ValidationProps":  {
+                                                                                       "EnableContentValidation":  true,
+                                                                                       "Schedule":  {
+                                                                                                        "RecurCount":  3,
+                                                                                                        "RecurInterval":  "Days"
+                                                                                                    }
+                                                                                   },
+                                                               "GeneralProps":  {
+                                                                                    "ClientCommunicationType":  "HTTP"
+                                                                                },
+                                                               "DistributionPointName":  "SCCMLAB1-CM1.LABTEST.LOCAL"
+                                                           }
+                                                       ],
+                            "SiteBoundaries":  [
+                                                   {
+                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
+                                                       "IPRange":  "192.168.50.1-192.168.50.254",
+                                                       "Name":  "192.168.50.0 Boundary"
+                                                   },
+                                                   {
+                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
+                                                       "IPRange":  "192.168.51.1-192.168.51.254",
+                                                       "Name":  "192.168.51.0 Boundary"
+                                                   },
+                                                   {
+                                                       "MemberOfBoundaryGroupName":  "Default Boundary Group",
+                                                       "IPRange":  "192.168.52.1-192.168.52.254",
+                                                       "Name":  "192.168.52.0 Boundary"
+                                                   }
+                                               ],
+                            "DomainJoinAccountOUs":  [
+                                                         {
+                                                             "OUName":  "OU=Desktops,OU=_Workstations"
+                                                         },
+                                                         {
+                                                             "OUName":  "OU=Staging,OU=_Workstations"
+                                                         },
+                                                         {
+                                                             "OUName":  "CN=Computers"
+                                                         }
+                                                     ],
+                            "Collections":  {
+                                                "DeviceCollections":  [
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Server%\u0027",
+                                                                                                               "RuleName":  "All Servers"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Systems",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All Servers",
+                                                                                                    "Name":  "All Servers"
+                                                                                                },
+                                                                              "Location":  "Master Collections",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Workstation%\u0027",
+                                                                                                               "RuleName":  "All Workstations"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Systems",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All Workstations",
+                                                                                                    "Name":  "All Workstations"
+                                                                                                },
+                                                                              "Location":  "Master Collections",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Workstation%\u0027",
+                                                                                                               "RuleName":  "All Workstations - Admin"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Systems",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All workstations admin, to hide from technician",
+                                                                                                    "Name":  "All Workstations - Admin"
+                                                                                                },
+                                                                              "Location":  "Master Collections",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "IncludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "IncludeCollectionName":  "All Workstations"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Prod client settings for workstations",
+                                                                                                    "Name":  "MC - CS - Workstation Prod"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Client Settings",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Test client settings for workstations",
+                                                                                                    "Name":  "MC - CS - Workstation Test"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Client Settings",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "IncludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "IncludeCollectionName":  "All Servers"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Prod client settings for servers",
+                                                                                                    "Name":  "MC - CS - Server Prod"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Client Settings",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Test client settings for servers",
+                                                                                                    "Name":  "MC - CS - Server Test"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Client Settings",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "IncludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "IncludeCollectionName":  "All Servers"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Endpoint Protection Policy for Prod Workstations",
+                                                                                                    "Name":  "MC - EP - Workstation Prod"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Endpoint Protection",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Endpoint Protection Policy for Test Workstations",
+                                                                                                    "Name":  "MC - EP - Workstation Test"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Endpoint Protection",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "IncludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "IncludeCollectionName":  "All Servers"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Endpoint Protection Policy for PROD servers",
+                                                                                                    "Name":  "MC - EP - Server Prod"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Endpoint Protection",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Endpoint Protection Policy for Test Servers",
+                                                                                                    "Name":  "MC - EP - Server Test"
+                                                                                                },
+                                                                              "Location":  "Master Collections\\MC - Endpoint Protection",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ResourceId not in (select SMS_R_SYSTEM.ResourceID from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceId = SMS_R_System.ResourceId where SMS_R_System.IsVirtualMachine = \u0027True\u0027) and SMS_R_System.OperatingSystemNameandVersion like \u0027Microsoft Windows NT%Server%\u0027",
+                                                                                                               "RuleName":  "SRV - INV - Physical"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All physical servers",
+                                                                                                    "Name":  "SRV - INV - Physical"
+                                                                                                },
+                                                                              "Location":  "Servers\\SRV - Inventory\\SRV - Hardware",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.IsVirtualMachine = \u0027True\u0027 and SMS_R_System.OperatingSystemNameandVersion like \u0027Microsoft Windows NT%Server%\u0027",
+                                                                                                               "RuleName":  "SRV - INV - Virtual"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All virtual servers",
+                                                                                                    "Name":  "SRV - INV - Virtual"
+                                                                                                },
+                                                                              "Location":  "Servers\\SRV - Inventory\\SRV - Hardware",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Server 6.0%\u0027 or OperatingSystemNameandVersion like \u0027%Server 6.1%\u0027",
+                                                                                                               "RuleName":  "SRV - INV - Windows 2008 and 2008 R2"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All servers with Windows 2008 or 2008 R2 operating system",
+                                                                                                    "Name":  "SRV - INV - Windows 2008 and 2008 R2"
+                                                                                                },
+                                                                              "Location":  "Servers\\SRV - Inventory\\SRV - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Server 6.2%\u0027 or OperatingSystemNameandVersion like \u0027%Server 6.3%\u0027",
+                                                                                                               "RuleName":  "SRV - INV - Windows 2012 and 2012 R2"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All servers with Windows 2012 or 2012 R2 operating system",
+                                                                                                    "Name":  "SRV - INV - Windows 2012 and 2012 R2"
+                                                                                                },
+                                                                              "Location":  "Servers\\SRV - Inventory\\SRV - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Server 5.2%\u0027",
+                                                                                                               "RuleName":  "SRV - INV - Windows 2003 and 2003 R2"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All servers with Windows 2003 or 2003 R2 operating system",
+                                                                                                    "Name":  "SRV - INV - Windows 2003 and 2003 R2"
+                                                                                                },
+                                                                              "Location":  "Servers\\SRV - Inventory\\SRV - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Server 10%\u0027",
+                                                                                                               "RuleName":  "SRV - INV - Windows 2016"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Servers",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All servers with Windows 2016",
+                                                                                                    "Name":  "SRV - INV - Windows 2016"
+                                                                                                },
+                                                                              "Location":  "Servers\\SRV - Inventory\\SRV - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Workstation 6.1%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Windows 7"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All workstations with Windows 7 operating system",
+                                                                                                    "Name":  "WKS - INV - Windows 7"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Workstation 6.2%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Windows 8"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All workstations with Windows 8 operating system",
+                                                                                                    "Name":  "WKS - INV - Windows 8"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Workstation 6.3%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Windows 8.1"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All workstations with Windows 8.1 operating system",
+                                                                                                    "Name":  "WKS - INV - Windows 8.1"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System   where OperatingSystemNameandVersion like \u0027%Workstation 5.1%\u0027 or OperatingSystemNameandVersion like \u0027%Workstation 5.2%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Windows XP"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All workstations with Windows XP operating system",
+                                                                                                    "Name":  "WKS - INV - Windows XP"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_ADD_REMOVE_PROGRAMS on SMS_G_System_ADD_REMOVE_PROGRAMS.ResourceID = SMS_R_System.ResourceId where SMS_G_System_ADD_REMOVE_PROGRAMS.DisplayName like \u0027%Configuration Manager Console%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - SCCM Console"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All systems with SCCM console installed",
+                                                                                                    "Name":  "WKS - INV - SCCM Console"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Software",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like \u00275.00.8577.100%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Clients Version | 1710"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "SCCM client version 1710",
+                                                                                                    "Name":  "WKS - INV - Clients Version | 1710"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Software",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceId = SMS_R_System.ResourceId where SMS_G_System_COMPUTER_SYSTEM.Manufacturer like \u0027%Dell%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Laptops | Dell"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All Dell Laptops",
+                                                                                                    "Name":  "WKS - INV - Laptops | Dell"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Hardware",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceId = SMS_R_System.ResourceId where SMS_G_System_COMPUTER_SYSTEM.Manufacturer like \u0027%Lenovo%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Laptops | Lenovo"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All Lenovo Laptops",
+                                                                                                    "Name":  "WKS - INV - Laptops | Lenovo"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Hardware",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceId = SMS_R_System.ResourceId where SMS_G_System_COMPUTER_SYSTEM.Manufacturer like \u0027%HP%\u0027 or SMS_G_System_COMPUTER_SYSTEM.Manufacturer like \u0027%Hewlett-Packard%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Laptops | HP"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All HP Laptops",
+                                                                                                    "Name":  "WKS - INV - Laptops | HP"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Hardware",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceId = SMS_R_System.ResourceId where SMS_G_System_COMPUTER_SYSTEM.Model = \u0027Surface Pro 4\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Microsoft Surface 4"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All Microsoft Surface 4 Laptops",
+                                                                                                    "Name":  "WKS - INV - Microsoft Surface 4"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Hardware",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "QueryMembershipRules":  [
+                                                                                                           {
+                                                                                                               "QueryExpression":  "select SMS_R_System.ResourceID,SMS_R_System.ResourceType,SMS_R_System.Name,SMS_R_System.SMSUniqueIdentifier,SMS_R_System.ResourceDomainORWorkgroup,SMS_R_System.Client from SMS_R_System where OperatingSystemNameandVersion like \u0027%Workstation 10.%\u0027",
+                                                                                                               "RuleName":  "WKS - INV - Windows 10"
+                                                                                                           }
+                                                                                                       ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "All workstations with Windows 10 operating system",
+                                                                                                    "Name":  "WKS - INV - Windows 10"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Inventory\\WKS - Operating System",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "OSD Collection for Windows 10 deployment in production",
+                                                                                                    "Name":  "WKS - OSD - Windows 10 - PROD"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - OS Deployment",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "OSD collection to test deployment of Windows 10. Limited to admins only",
+                                                                                                    "Name":  "WKS - OSD - Windows 10 - TEST"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - OS Deployment",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Software Update collection to exclude computers from all Software Update collections. Manual Membership",
+                                                                                                    "Name":  "WKS - SU - Exclusion"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Software Update",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "ExcludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "ExcludeCollectionName":  "WKS - SU - Exclusion"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Software Update collection for Pilot group. Manual membership",
+                                                                                                    "Name":  "WKS - SU - Pilot"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Software Update",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "ExcludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "ExcludeCollectionName":  "WKS - SU - Exclusion"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Software Update collection for test group. Manual membership",
+                                                                                                    "Name":  "WKS - SU - TEST"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Software Update",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "IncludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "IncludeCollectionName":  "All Workstations"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "ExcludeMembershipRules":  [
+                                                                                                             {
+                                                                                                                 "ExcludeCollectionName":  "WKS - SU - Exclusion"
+                                                                                                             }
+                                                                                                         ],
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Software Update collection for Production. All workstations",
+                                                                                                    "Name":  "WKS - SU - PROD"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Software Update",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Collection for deployment of Office 365 production",
+                                                                                                    "Name":  "WKS - SD - Office 365 - PROD"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Software Distribution",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          },
+                                                                          {
+                                                                              "BasicSettings":  {
+                                                                                                    "LimitingCollectionName":  "All Workstations - Admin",
+                                                                                                    "RefreshType":  2,
+                                                                                                    "Comment":  "Test Collection for deployment of Office 365. Limited to admins only.",
+                                                                                                    "Name":  "WKS - SD - Office 365 - TEST"
+                                                                                                },
+                                                                              "Location":  "Workstations\\WKS - Software Distribution",
+                                                                              "Schedule":  {
+                                                                                               "RecurCount":  7,
+                                                                                               "RecurInterval":  "Days"
+                                                                                           }
+                                                                          }
+                                                                      ]
+                                            },
+                            "WSUSProps":  {
+                                              "EnabledClassifications":  [
+                                                                             "Critical Updates",
+                                                                             "Definition Updates",
+                                                                             "Feature Packs",
+                                                                             "Security Updates",
+                                                                             "Service Packs",
+                                                                             "Update Rollups",
+                                                                             "Updates",
+                                                                             "Upgrades"
+                                                                         ],
+                                              "DisabledProducts":  [
+
+                                                                   ],
+                                              "EnabledProducts":  [
+                                                                      "Windows Server 2016",
+                                                                      "Windows Server 2012 R2",
+                                                                      "Windows 10",
+                                                                      "Office 2010",
+                                                                      "Office 2016"
+                                                                  ],
+                                              "Schedule":  {
+                                                               "RecurCount":  3,
+                                                               "RecurInterval":  "Days"
+                                                           },
+                                              "UpdateLanguages":  [
+                                                                      "English"
+                                                                  ],
+                                              "EnabledProductFamilies":  [
+
+                                                                         ],
+                                              "ContentDirectory":  "F:\\WSUS",
+                                              "DisabledClassifications":  [
+                                                                              "Tools"
+                                                                          ]
+                                          }
                         },
     "SwitchProps":  {
                         "ManagementAdapter":  true,
@@ -199,56 +874,64 @@
                     "ForestFunctionalLevel":  "Win2012R2",
                     "OUStructure":  [
                                         {
-                                            "Name":  "_Admin"
+                                            "Name":  "_Admin",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Admin",
                                             "Description":  "Service Accounts",
                                             "Name":  "Service Accounts",
-                                            "Protected":  true
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Admin",
                                             "Description":  "Admin User Accounts",
                                             "Name":  "Privileged Users",
-                                            "Protected":  true
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Admin",
                                             "Description":  "Admin User Accounts",
                                             "Name":  "Privileged Groups",
-                                            "Protected":  true
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
-                                            "Name":  "_Workstations"
+                                            "Name":  "_Workstations",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Workstations",
                                             "Description":  "Default Desktops",
-                                            "Name":  "Desktops"
+                                            "Name":  "Desktops",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Workstations",
                                             "Description":  "Staging Desktop OU Used During Builds",
-                                            "Name":  "Staging"
+                                            "Name":  "Staging",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
-                                            "Name":  "_Standard"
+                                            "Name":  "_Standard",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Standard",
                                             "Description":  "Standard Users",
-                                            "Name":  "User Accounts"
+                                            "Name":  "User Accounts",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Standard",
                                             "Description":  "Standard Groups",
-                                            "Name":  "Groups"
+                                            "Name":  "Groups",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         },
                                         {
                                             "Parent":  "OU=_Standard",
                                             "Description":  "Exchange Distribution Lists",
-                                            "Name":  "Distribution Lists"
+                                            "Name":  "Distribution Lists",
+                                            "ProtectedFromAccidentalDeletion":  false
                                         }
                                     ],
                     "DomainFunctionalLevel":  "Win2012R2",
