@@ -72,7 +72,7 @@ Add-LabVirtualNetworkDefinition -Name $vSwitch -HyperVProperties $properties -Ma
 $roles = Get-LabMachineRoleDefinition -Role RootDC @{ DomainFunctionalLevel = $ConfigFile.ADProps.DomainFunctionalLevel; ForestFunctionalLevel = $ConfigFile.ADProps.ForestFunctionalLevel }
 $netAdapter = New-LabNetworkAdapterDefinition -VirtualSwitch $vSwitch -Ipv4Address 192.168.50.10/$mask -Ipv4Gateway $defaultGW `
     -AccessVLANID $vlanid -InterfaceName $vSwitch -Ipv4DNSServers $DNSServers
-Add-LabMachineDefinition -Name "$($LabName)-DC1" -Memory 4GB -Roles $Roles -NetworkAdapter $netAdapter 
+Add-LabMachineDefinition -Name "$($LabName)-DC1" -Memory 2GB -Roles $Roles -NetworkAdapter $netAdapter -Processors 2
 
 $sccmRole = Get-LabPostInstallationActivity -CustomRole SCCM -Properties @{
     SccmSiteCode          = $ConfigFile.SCCMInstallProps.SccmSiteCode
@@ -91,11 +91,11 @@ $Drives += (Add-LabDiskDefinition -Name CMSOURCE -DiskSizeInGb 200 -Label 'CMSOU
 $Drives += (Add-LabDiskDefinition -Name WSUSDATA -DiskSizeInGb 200 -Label 'WSUSDATA' -DriveLetter F -PassThru).Name
 $netAdapter = New-LabNetworkAdapterDefinition -VirtualSwitch $vSwitch -Ipv4Address 192.168.50.20/$mask -Ipv4Gateway $defaultGW -AccessVLANID $vlanid -InterfaceName $vSwitch -Ipv4DNSServers $DNSServers
 
-Add-LabMachineDefinition -Name "$($LabName)-CM1" -Memory 4GB -PostInstallationActivity $sccmRole -DiskName $Drives -NetworkAdapter $netAdapter
+Add-LabMachineDefinition -Name "$($LabName)-CM1" -Memory 6GB -Processors 4 -PostInstallationActivity $sccmRole -DiskName $Drives -NetworkAdapter $netAdapter
 
 $sqlRole = Get-LabMachineRoleDefinition -Role SQLServer2017 -Properties @{ Collation = 'SQL_Latin1_General_CP1_CI_AS' }
 $netAdapter = New-LabNetworkAdapterDefinition -VirtualSwitch $vSwitch -Ipv4Address 192.168.50.21/$mask -Ipv4Gateway $defaultGW -AccessVLANID $vlanid -InterfaceName $vSwitch -Ipv4DNSServers $DNSServers
-Add-LabMachineDefinition -Name "$($LabName)-DB1" -Memory 4GB -Roles $sqlRole -NetworkAdapter $netAdapter
+Add-LabMachineDefinition -Name "$($LabName)-DB1" -Memory 4GB -Processors 4 -Roles $sqlRole -NetworkAdapter $netAdapter
 
 Install-Lab
 
@@ -143,24 +143,40 @@ Invoke-LabCommand -ActivityName 'Creating Active Directory OUs' -ComputerName "$
     param (
         [Object[]]$OUStructure
     )
+    function ConvertTo-PSObjectToHash {
+        param (
+            [Object]$Obj
+        )
+    
+        $Hash = @{}
+        foreach ( $property in $Obj.psobject.properties.name ) {
+            $Hash[$property] = $Obj.$property
+        }
+        [HashTable]$Hash
+    }
 
     #Create OU Structure based on the incoming array
     $ADRootDN = (Get-ADDomain).DistinguishedName
 
-    ForEach ($OU in $OUStructure) {
+    foreach  ($OU in $OUStructure)
+    {
         if (-not $OU.Parent -or $OU.Parent -eq '') {$ParentOU = $ADRootDN} else {$ParentOU = $('{0}, {1}' -f $OU.Parent, $ADRootDN)}
 
-        if (-not $OU.Protected) {$ProtectedOU = $false} else {$ProtectedOU = $true}
-
-        if (-not $OU.Description) {$OUDescription = ''} else {$OUDescription = $OU.Description}
+        #Copy the object, and remove the Parent parameter
+        $TempOU = $OU.psobject.copy()
+        $TempOU.PSObject.Properties.Remove('Parent')
+        #Convert this to a hastable for splatting
+        $OUSplat = ConvertTo-PSObjectToHash -obj $TempOU
 
         try {
             Get-ADOrganizationalUnit -Identity $('OU={0},{1}' -f $OU.Name, $ParentOU)
         }
         catch {
-            New-ADOrganizationalUnit -Name $OU.Name -Path $ParentOU -Description $OUDescription -ProtectedFromAccidentalDeletion $ProtectedOU 
+            New-ADOrganizationalUnit -Path $ParentOU @OUSplat
         }
+
     }
+
 } -ArgumentList (,$ConfigFile.ADProps.OUStructure)
 
 Invoke-LabCommand -ActivityName 'Creating Service Accounts' -ComputerName "$($LabName)-DC1" -ScriptBlock {
@@ -250,7 +266,7 @@ Invoke-LabCommand -ActivityName 'Creating Service Accounts' -ComputerName "$($La
             }
             'CP' {
                 #Client Push Account
-                #To deploy client agents to domain controllers, the account needs to be a mber of Domain Admins
+                #To deploy client agents to domain controllers, the account needs to be a member of Domain Admins
                 Get-ADUser $TempAcct.SamAccountName | Add-ADPrincipalGroupMembership -MemberOf "Domain Admins"
             }
             'NA' {
@@ -260,7 +276,7 @@ Invoke-LabCommand -ActivityName 'Creating Service Accounts' -ComputerName "$($La
             }
         } 
     }
-} -ArgumentList ($ConfigFile.SccmConfigProps.ServiceAccounts),($ConfigFile.SccmConfigProps.DomainJoinAccountOUs)
+} -ArgumentList ($ConfigFile.SccmConfigProps.ServiceAccounts), ($ConfigFile.SccmConfigProps.DomainJoinAccountOUs)
 
 Invoke-LabCommand -ActivityName 'Installing and Configuring WSUS' -ComputerName "$($LabName)-CM1" -ScriptBlock {
 
@@ -308,7 +324,7 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Accounts' -ComputerName "$($La
     $NetBIOSDomainName = (Get-WmiObject -Class Win32_NTDomain).DomainName
     $ProviderMachineName = [System.Net.Dns]::GetHostEntry([string]$env:COMPUTERNAME).HostName
 
-    if((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
+    if ((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
         New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $ProviderMachineName
     }
 
@@ -329,27 +345,27 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Accounts' -ComputerName "$($La
                 Set-CMSoftwareDistributionComponent -Sitecode $SiteCode.Name -NetworkAccessAccountName $NAA
             }
             'CP' {
-                $PushPass =  (ConvertTo-SecureString $Acct.Password -AsPlainText -Force)
+                $PushPass = (ConvertTo-SecureString $Acct.Password -AsPlainText -Force)
                 $PushAcct = "{0}\{1}" -f $NetBIOSDomainName[1].ToUpper(), $Acct.SamAccountName
                 New-CMAccount -Name $PushAcct -Password $PushPass -Sitecode $SiteCode.Name
                 $ClientPushSplat = @{
                     EnableAutomaticClientPushInstallation = $true
-                    EnableSystemTypeConfigurationManager = $true
-                    InstallClientToDomainController = $true 
-                    ChosenAccount = $PushAcct
-                    SiteCode = $SiteCode.Name  
+                    EnableSystemTypeConfigurationManager  = $true
+                    InstallClientToDomainController       = $true 
+                    ChosenAccount                         = $PushAcct
+                    SiteCode                              = $SiteCode.Name  
                 }
                 Set-CMClientPushInstallation @ClientPushSplat
             }
         }
     }
-} -ArgumentList ($ConfigFile.SccmConfigProps.ServiceAccounts),$ConfigFile.SCCMInstallProps.SccmSiteCode
+} -ArgumentList ($ConfigFile.SccmConfigProps.ServiceAccounts), $ConfigFile.SCCMInstallProps.SccmSiteCode
 
 Invoke-LabCommand -ActivityName 'Configuring SCCM Boundaries' -ComputerName "$($LabName)-CM1" -ScriptBlock {
     param (
-         [string]$SccmSiteCode,
-         [Object[]]$Boundaries,
-         [Object[]]$BoundaryGroups
+        [string]$SccmSiteCode,
+        [Object[]]$Boundaries,
+        [Object[]]$BoundaryGroups
     )
 
     If ((Get-Module ConfigurationManager) -eq $null) {
@@ -360,35 +376,33 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Boundaries' -ComputerName "$($
     #Assume that the SCCM Server itself will service the Boundary Groups that are created
     $ProviderMachineName = [System.Net.Dns]::GetHostEntry([string]$env:COMPUTERNAME).HostName
 
-    if((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
+    if ((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
         New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $ProviderMachineName
     }
 
     $SiteCode = Get-PSDrive -PSProvider CMSITE                                                                        
     Set-Location ($SiteCode.Name + ":")
 
-    foreach ($BoundaryGroup in $BoundaryGroups)
-    {
+    foreach ($BoundaryGroup in $BoundaryGroups) {
         New-CMBoundaryGroup -Name $BoundaryGroup.Name -AddSiteSystemServerNames $ProviderMachineName -DefaultSiteCode $BoundaryGroup.SiteCode
     }
     
-    foreach ($Boundary in $Boundaries)
-    {
+    foreach ($Boundary in $Boundaries) {
         New-CMBoundary -DisplayName $Boundary.Name -BoundaryType IPRange -Value $Boundary.IPRange
         Add-CMBoundaryToGroup -BoundaryName $Boundary.Name -BoundaryGroupName $Boundary.MemberOfBoundaryGroupName
     }
 
-} -ArgumentList $ConfigFile.SCCMInstallProps.SccmSiteCode,($ConfigFile.SccmConfigProps.SiteBoundaries),($ConfigFile.SccmConfigProps.BoundaryGroups)
+} -ArgumentList $ConfigFile.SCCMInstallProps.SccmSiteCode, ($ConfigFile.SccmConfigProps.SiteBoundaries), ($ConfigFile.SccmConfigProps.BoundaryGroups)
 
 Invoke-LabCommand -ActivityName 'Configuring SCCM Discovery Methods' -ComputerName "$($LabName)-CM1" -ScriptBlock {
     #Additional Parameters which can be entered into the Config File for discovery methods are located here:
     #https://docs.microsoft.com/en-us/powershell/module/configurationmanager/set-cmdiscoverymethod?view=sccm-ps
     param (
-         [string]$SccmSiteCode,
-         [Object[]]$DiscoveryMethods
+        [string]$SccmSiteCode,
+        [Object[]]$DiscoveryMethods
     )
 
-    function ConvertTo-PSObjectToHash{
+    function ConvertTo-PSObjectToHash {
         param ( [Object]$Obj )
         $Hash = @{}
         foreach ( $property in $Obj.psobject.properties.name ) {$Hash[$property] = $Obj.$property}
@@ -403,15 +417,14 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Discovery Methods' -ComputerNa
     #Assume that the SCCM Server itself will service the Boundary Groups that are created
     $ProviderMachineName = [System.Net.Dns]::GetHostEntry([string]$env:COMPUTERNAME).HostName
 
-    if((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
+    if ((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
         New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $ProviderMachineName
     }
 
     $SiteCode = Get-PSDrive -PSProvider CMSITE                                                                        
     Set-Location ($SiteCode.Name + ":")
 
-    if ($DiscoveryMethods.ActiveDirectorySystemDiscovery)
-    {
+    if ($DiscoveryMethods.ActiveDirectorySystemDiscovery) {
         #Grab the standard Settings
         $SettingsSplat = ConvertTo-PSObjectToHash -obj $DiscoveryMethods.ActiveDirectorySystemDiscovery.Settings
         #Grab the Schedule Settings
@@ -426,8 +439,7 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Discovery Methods' -ComputerNa
         Set-CMDiscoveryMethod -ActiveDirectorySystemDiscovery -PollingSchedule $Schedule @SettingsSplat
     }
 
-    if ($DiscoveryMethods.ActiveDirectoryUserDiscovery)
-    {
+    if ($DiscoveryMethods.ActiveDirectoryUserDiscovery) {
         #Grab the standard Settings
         $SettingsSplat = ConvertTo-PSObjectToHash -obj $DiscoveryMethods.ActiveDirectoryUserDiscovery.Settings
         #Grab the Schedule Settings
@@ -442,8 +454,7 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Discovery Methods' -ComputerNa
         Set-CMDiscoveryMethod -ActiveDirectoryUserDiscovery -PollingSchedule $Schedule @SettingsSplat
     }
 
-    if ($DiscoveryMethods.ActiveDirectoryGroupDiscovery)
-    {
+    if ($DiscoveryMethods.ActiveDirectoryGroupDiscovery) {
         #Grab the standard Settings
         $SettingsSplat = ConvertTo-PSObjectToHash -obj $DiscoveryMethods.ActiveDirectoryGroupDiscovery.Settings
         #Grab the Schedule Settings
@@ -455,14 +466,13 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Discovery Methods' -ComputerNa
         #Create a new Schedule
         $Schedule = New-CMSchedule @ScheduleSplat
         #Get the Group Scope
-        $CMGroupDiscoveryScopeSplat=ConvertTo-PSObjectToHash -obj $DiscoveryMethods.ActiveDirectoryGroupDiscovery.Scope
+        $CMGroupDiscoveryScopeSplat = ConvertTo-PSObjectToHash -obj $DiscoveryMethods.ActiveDirectoryGroupDiscovery.Scope
         $GroupScope = New-CMADGroupDiscoveryScope @CMGroupDiscoveryScopeSplat
         #Set the Discovery Method with the new Schedule
         Set-CMDiscoveryMethod -ActiveDirectoryGroupDiscovery -AddGroupDiscoveryScope $GroupScope -PollingSchedule $Schedule @SettingsSplat
     }
 
-    if ($DiscoveryMethods.HeartbeatDiscovery)
-    {
+    if ($DiscoveryMethods.HeartbeatDiscovery) {
         #Grab the standard Settings
         $SettingsSplat = ConvertTo-PSObjectToHash -obj $DiscoveryMethods.HeartbeatDiscovery.Settings
 
@@ -484,9 +494,258 @@ Invoke-LabCommand -ActivityName 'Configuring SCCM Discovery Methods' -ComputerNa
             Set-CMDiscoveryMethod -Heartbeat @SettingsSplat
         }
     }
-} -ArgumentList $ConfigFile.SCCMInstallProps.SccmSiteCode,($ConfigFile.SccmConfigProps.DiscoveryMethods)
+} -ArgumentList $ConfigFile.SCCMInstallProps.SccmSiteCode, ($ConfigFile.SccmConfigProps.DiscoveryMethods)
 
-## Enable PXE on Distribution Point
+Invoke-LabCommand -ActivityName 'Configuring Software Update Point (SUP)' -ComputerName "$($LabName)-CM1" -ScriptBlock {
+
+    param (
+        [string]$SCCMSiteCode,
+        [Object]$WSUSProps
+    )
+
+    function ConvertTo-PSObjectToHash {
+        param (
+            [Object]$Obj
+        )
+    
+        $Hash = @{}
+        foreach ( $property in $Obj.psobject.properties.name ) {
+            $Hash[$property] = $Obj.$property
+        }
+        [HashTable]$Hash
+    }
+
+    If ((Get-Module ConfigurationManager) -eq $null) {
+        Import-Module "C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin\ConfigurationManager.psd1"
+    }
+
+    $SiteCode = $SCCMSiteCode
+    $ProviderMachineName = [System.Net.Dns]::GetHostEntry([string]$env:COMPUTERNAME).HostName
+
+    if ((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
+        New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $ProviderMachineName
+    }
+
+    $SiteCode = Get-PSDrive -PSProvider CMSITE                                                                        
+    Set-Location ($SiteCode.Name + ":")
+
+    $ProviderMachineName = [System.Net.Dns]::GetHostEntry([string]$env:COMPUTERNAME).HostName
+
+    if (-not (Get-CMSoftwareUpdatePoint -SiteSystemServerName $ProviderMachineName)) {
+        Add-CMSoftwareUpdatePoint -SiteCode $SCCMSiteCode -SiteSystemServerName $ProviderMachineName
+    }
+    
+    #At this stage, there is a disconnect between the SCCM Product List and the one WSUS has (was synced from Windows update during the initial WSUS config).
+    # To stop unnecessary downloading of content, first disable all products and then force a sync. We will then use the products / product families in the
+    # config file to reconfigure what products/categories and languages we want
+    
+    #Get all product items that are currently enabled
+    $ActiveProducts = Get-CMSoftwareUpdateCategory -Fast | Where-Object {$_.IsSubscribed -eq $true -and $_.CategoryTypeName -eq 'Product'} | Select-Object -Property LocalizedCategoryInstanceName
+
+    #Get a total list of products, this will be used to determine if the product categories have been incorporated after the update
+    $BaseProductCount = $(Get-CMSoftwareUpdateCategory -Fast | Where-Object {$_.CategoryTypeName -eq 'Product'}).Count
+
+    if ($ActiveProducts) {
+        #Convert this to an array of strings
+        $ProductsToDisable = $ActiveProducts | ForEach-Object {$_.LocalizedCategoryInstanceName}
+        #Disable everything
+        Set-CMSoftwareUpdatePointComponent -SiteCode $SCCMSiteCode -RemoveProduct $ProductsToDisable
+    }
+
+    #Force a resync from within SCCM (this will update the product list to match WSUS)
+    Sync-CMSoftwareUpdate -FullSync $false
+    #Wait for the synchronisation to complete
+    Do {
+        #If currently synchronising, sleep for 1 minute before we check again
+        If ($Syncronizing) {
+            Start-Sleep -Seconds 60
+        }
+
+        $Syncronizing = $False
+        ForEach ($softwareUpdatePointSyncStatus in Get-CMSoftwareUpdateSyncStatus) {
+            If ($softwareUpdatePointSyncStatus.LastSyncState -eq 6704) {$Syncronizing = $True}
+        }
+    } Until(!$Syncronizing)
+
+    #Wait until the update classifications have been incorporated into the main list.  This process can take an unknown amount of time
+    # 30 minutes has been observed
+    do {
+        Start-Sleep 60
+        $CurrentProductCount = $(Get-CMSoftwareUpdateCategory -Fast | Where-Object {$_.CategoryTypeName -eq 'Product'}).Count
+        if ($CurrentProductCount -gt $BaseProductCount) {$ProductsAdded = $true} else {$ProductsAdded = $false}
+    } until ($ProductsAdded)
+
+    #Now reconfigure based on requirements in the Config File
+    if ($WSUSProps.EnabledProductFamilies) {
+        Set-CMSoftwareUpdatePointComponent -SiteCode $SCCMSiteCode -AddProductFamily $WSUSProps.EnabledProductFamilies
+    }
+
+    if ($WSUSProps.EnabledProducts) {
+        Set-CMSoftwareUpdatePointComponent -SiteCode $SCCMSiteCode -AddProduct $WSUSProps.EnabledProducts
+    }
+
+    #Disabled products is typically used in concert with the EnabledProductFamilies above, if only one or two products in a given family arent required.
+    # Rather than needing to list all products in a family, enable the whole family, then disable the ones that arent required.
+    if ($WSUSProps.DisabledProducts) {
+        Set-CMSoftwareUpdatePointComponent -SiteCode $SCCMSiteCode -RemoveProduct $WSUSProps.DisabledProducts
+    }
+  
+    if ($WSUSProps.EnabledClassifications) {
+        Set-CMSoftwareUpdatePointComponent -SiteCode $SCCMSiteCode -AddUpdateClassification $WSUSProps.EnabledClassifications
+    }
+
+    if ($WSUSProps.DisabledClassifications) {
+        Set-CMSoftwareUpdatePointComponent -SiteCode $SCCMSiteCode -RemoveUpdateClassification $WSUSProps.DisabledClassifications
+    }
+
+    if ($WSUSProps.UpdateLanguages) {
+        #If we have been provided a list of update languages, remove all selected update languages and replace it with the provided one
+        #Languages should be the same as they appear in sccm, ie 'English' 'German' etc
+
+        #Retrive the currently enabled update languages
+        $EnabledTitleLanguages = ((Get-CMSoftwareUpdatePointComponent).Props | Where-Object {$_.PropertyName -eq 'SupportedTitleLanguages'}).Value2
+        $EnabledUpdateLanguages = ((Get-CMSoftwareUpdatePointComponent).Props | Where-Object {$_.PropertyName -eq 'SupportedUpdateLanguages'}).Value2
+        #SCCM Returns these enabled languages using their ISO code, but to remove them, they need to be converted into the relevant culture display name
+
+        if ($EnabledTitleLanguages.Length -gt 0) {
+            $CleanupTitleLanguages = @()
+            foreach ($country in $EnabledTitleLanguages.Split(",")) {
+                $culture = New-Object system.globalization.cultureinfo($country)
+                $CleanupTitleLanguages += $culture.DisplayName
+            }    
+
+            Set-CMSoftwareUpdatePointComponent -RemoveLanguageSummaryDetail $CleanupTitleLanguages    
+        }
+        
+        if ($EnabledUpdateLanguages.Length -gt 0) {
+            $CleanupUpdateLanguages = @()
+            foreach ($country in $EnabledUpdateLanguages.Split(",")) {
+                $culture = New-Object system.globalization.cultureinfo($country)
+                $CleanupUpdateLanguages += $culture.DisplayName
+            }
+
+            Set-CMSoftwareUpdatePointComponent -RemoveLanguageUpdateFile $CleanupUpdateLanguages
+        }
+                
+        #Now replace that with the ones in the config file (we use the same list for both updates and summaries)
+        Set-CMSoftwareUpdatePointComponent -AddLanguageUpdateFile $WSUSProps.UpdateLanguages -AddLanguageSummaryDetail $WSUSProps.UpdateLanguages
+    }
+    
+    #BUG: Disabled currently due to no effect on the schedule configuration regardless of what schedule is put in
+    # if ($WSUSProps.Schedule)
+    # {
+    #     #Update the Syunchronisation Schedule
+    #     $TempSchedule = $WSUSProps.Schedule.psobject.copy()
+    #     #Convert the passed in Date/Time to the correct Format, and replace the Member Variable
+    #     $TempSchedule | Add-Member -MemberType NoteProperty -Name 'Start' -Value (Get-Date -Date $TempSchedule.Start -Format "yyyy/MM/dd 00:00:00") -Force
+    #     #Convert this to a hastable for splatting
+    #     $ScheduleSplat = ConvertTo-PSObjectToHash -obj $TempSchedule
+    #     #Create a new Schedule
+    #     $Schedule = New-CMSchedule @ScheduleSplat
+
+    #     Set-CMSoftwareUpdatePointComponent -Schedule $Schedule 
+
+    # }
+
+    #Force a full update on the Software Updates (this will actually pull down content)
+    #Dont wait for this to finish, could take several hours
+    #Sync-CMSoftwareUpdate -FullSync $true
+
+} -ArgumentList $ConfigFile.SCCMInstallProps.SccmSiteCode, $ConfigFile.SccmConfigProps.WSUSProps
+
+Invoke-LabCommand -ActivityName 'Create Device Collections' -ComputerName "$($LabName)-CM1" -ScriptBlock {
+
+    param (
+        [string]$SCCMSiteCode,
+        [Object]$DeviceCollections,
+        [bool]$DeleteOnly = $false
+    )
+    function ConvertTo-PSObjectToHash {
+        param (
+            [Object]$Obj
+        )
+    
+        $Hash = @{}
+        foreach ( $property in $Obj.psobject.properties.name ) {
+            $Hash[$property] = $Obj.$property
+        }
+        [HashTable]$Hash
+    }
+
+    If ((Get-Module ConfigurationManager) -eq $null) {
+        Import-Module "C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin\ConfigurationManager.psd1"
+    }
+
+    $SiteCode = $SCCMSiteCode
+    $ProviderMachineName = [System.Net.Dns]::GetHostEntry([string]$env:COMPUTERNAME).HostName
+
+    if ((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
+        New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $ProviderMachineName
+    }
+
+    $SiteCode = Get-PSDrive -PSProvider CMSITE                                                                        
+    Set-Location ($SiteCode.Name + ":")
+
+    foreach ($Collection in $DeviceCollections) { 
+
+        if (Get-CMDeviceCollection -Name $Collection.BasicSettings.Name) {
+            Remove-CMCollection -Name $Collection.BasicSettings.Name -Force
+        }
+
+        if (-not $DeleteOnly) {
+            $NewCollectionHash = ConvertTo-PSObjectToHash -Obj $Collection.BasicSettings
+
+            If ($Collection.Schedule) {
+                $ScheduleSplat = ConvertTo-PSObjectToHash -obj $Collection.Schedule
+                $Schedule = New-CMSchedule @ScheduleSplat
+                New-CMDeviceCollection @NewCollectionHash -RefreshSchedule $Schedule
+            }
+            else {
+                New-CMDeviceCollection @NewCollectionHash 
+            }
+
+            foreach ($Rule in $Collection.QueryMembershipRules) {
+                $SingleRule = ConvertTo-PSObjectToHash -Obj $Rule
+                Add-CMDeviceCollectionQueryMembershipRule -CollectionName $Collection.BasicSettings.Name @SingleRule
+            }
+
+            foreach ($Rule in $Collection.IncludeMembershipRules) {
+                $SingleRule = ConvertTo-PSObjectToHash -Obj $Rule
+                Add-CMDeviceCollectionIncludeMembershipRule -CollectionName $Collection.BasicSettings.Name @SingleRule
+            }
+
+            foreach ($Rule in $Collection.ExcludeMembershipRules) {
+                $SingleRule = ConvertTo-PSObjectToHash -Obj $Rule
+                Add-CMDeviceCollectionExcludeMembershipRule -CollectionName $Collection.BasicSettings.Name @SingleRule
+            }
+
+            foreach ($Rule in $Collection.DirectMembershipRules) {
+                $SingleRule = ConvertTo-PSObjectToHash -Obj $Rule
+                $Device = Get-CMDevice @SingleRule
+                Add-CMDeviceCollectionDirectMembershipRule -CollectionName $Collection.BasicSettings.Name -Resource $Device
+            }
+  
+            foreach ($CollectionVariable in $Collection.Variables) {
+                $SingleVariable = ConvertTo-PSObjectToHash -Obj $CollectionVariable
+                New-CMDeviceCollectionVariable -CollectionName $Collection.BasicSettings.Name @SingleVariable
+            }
+
+            If ($Collection.Location) {
+                $RootFolder = "$($SiteCode.Name):\DeviceCollection"
+                $WorkingPath = $RootFolder
+                foreach ($Item in $Collection.Location.Split("\")) {
+                    if (-Not (Get-Item -Path $(Join-Path -Path $WorkingPath -ChildPath $item) -ErrorAction SilentlyContinue)) {
+                        New-Item -Path $WorkingPath -Name $Item  
+                    }
+             
+                    $WorkingPath = Join-Path -Path $WorkingPath -ChildPath $item
+                }    
+                Move-CMObject -FolderPath $WorkingPath -InputObject (Get-CMDeviceCollection -Name $Collection.BasicSettings.Name)
+            }
+        }   
+    }
+} -ArgumentList $ConfigFile.SCCMInstallProps.SccmSiteCode, $ConfigFile.SccmConfigProps.Collections.DeviceCollections
+
 
 ## Enable MDT Integration in SCCM
 
